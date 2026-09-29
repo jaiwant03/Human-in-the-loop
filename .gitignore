@@ -27,3 +27,7 @@ desktop.ini
 
 # MongoDB local data
 data/db/
+
+# n8n workflow files that contain embedded API keys (use locally only)
+n8n/Decision_Intelligence_Workflow_WithKey.json
+n8n/Decision_Intelligence_Workflow_FIXED.json

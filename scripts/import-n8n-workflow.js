@@ -44,7 +44,6 @@ const N8N_API_KEY = process.argv.find(a => a.startsWith('--api-key='))?.split('=
   || '';
 
 const WORKFLOW_FILE = path.join(__dirname, '..', 'n8n', 'Decision_Intelligence_Workflow.json');
-const GROQ_API_KEY = process.env.GROQ_API_KEY || require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') }) && process.env.GROQ_API_KEY;
 
 // ── Simple HTTP helper ──────────────────────────────────────────
 function request(method, urlStr, body, extraHeaders = {}) {
@@ -329,12 +328,7 @@ async function main() {
   console.log('  Decision Intelligence Workflow — n8n Auto-Import Tool');
   console.log('═══════════════════════════════════════════════════════\n');
 
-  // Load env
-  try {
-    require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
-  } catch {}
-
-  const groqKey   = process.env.GROQ_API_KEY || GROQ_API_KEY || '';
+  const groqKey   = process.env.GROQ_API_KEY || '';
   const groqModel = process.env.GROQ_MODEL   || 'llama-3.3-70b-versatile';
 
   if (!groqKey) {
