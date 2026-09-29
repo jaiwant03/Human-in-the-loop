@@ -298,21 +298,42 @@ async function analyzeDecisionWithN8N(decision) {
   // Attempt 1: Call n8n webhook if configured
   if (webhookUrl && !webhookUrl.includes('your-n8n-instance') && !webhookUrl.includes('example.com')) {
     try {
-      console.log(`[n8nService] Dispatching decision payload to n8n webhook: ${webhookUrl}`);
+      console.log(`[n8nService] Dispatching to n8n: ${webhookUrl}`);
       const response = await axios.post(webhookUrl, payload, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 15000,
+        timeout: 30000,
       });
 
-      if (response.data && (response.data.recommendation || response.data.aiAnalysis || response.data.data)) {
-        rawAiResult = response.data.aiAnalysis || response.data.data || response.data;
+      const d = response.data;
+
+      // New workflow format: { success, aiAnalysis, calculatedScores, ... }
+      if (d && d.success === true && d.aiAnalysis) {
+        rawAiResult = d.aiAnalysis;
+        // Also use the deterministic scores from n8n if provided
+        if (Array.isArray(d.calculatedScores) && d.calculatedScores.length > 0) {
+          // Map n8n format { option, score, rank } → internal format { name, score, rank }
+          const n8nScores = d.calculatedScores.map(s => ({
+            name: s.option || s.name,
+            score: s.score,
+            rank: s.rank,
+            breakdown: s.breakdown || {},
+          }));
+          // Overwrite with n8n's validated scores
+          Object.assign(calculatedScores, n8nScores);
+        }
         source = 'n8n_groq';
-        console.log('[n8nService] Successfully received AI analysis from n8n webhook.');
+        console.log(`[n8nService] ✓ n8n returned structured AI analysis. Top: ${rawAiResult.recommendation?.option} (${rawAiResult.recommendation?.score})`);
+      }
+      // Legacy / old workflow format: { data: {...}, recommendation, ... }
+      else if (d && (d.recommendation || d.data)) {
+        rawAiResult = d.data || d;
+        source = 'n8n_groq';
+        console.log('[n8nService] ✓ n8n returned legacy format response.');
       } else {
-        console.warn('[n8nService] n8n returned unexpected data structure, falling back.');
+        console.warn('[n8nService] n8n returned unrecognised structure:', JSON.stringify(d).substring(0, 200));
       }
     } catch (err) {
-      console.warn(`[n8nService] n8n webhook error (${err.message}). Proceeding with resilient fallback.`);
+      console.warn(`[n8nService] n8n webhook error (${err.message}). Using fallback.`);
     }
   }
 
