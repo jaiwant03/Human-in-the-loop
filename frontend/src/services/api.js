@@ -61,4 +61,24 @@ export const dashboardAPI = {
   },
 };
 
+export const chatAPI = {
+  // Parse natural language → full decision analysis (saves to DB)
+  analyzeFromChat: async (message) => {
+    const res = await apiClient.post('/chat/analyze', { message }, { timeout: 60000 });
+    return res.data;
+  },
+
+  // Conversational follow-up Q&A about an existing decision
+  sendMessage: async (message, decisionId = null, history = []) => {
+    const res = await apiClient.post('/chat/message', { message, decisionId, history }, { timeout: 30000 });
+    return res.data;
+  },
+
+  // Quick lightweight analysis (no DB save)
+  quickAnalyze: async (message) => {
+    const res = await apiClient.post('/chat/quick', { message }, { timeout: 30000 });
+    return res.data;
+  },
+};
+
 export default apiClient;
