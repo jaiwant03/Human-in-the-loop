@@ -181,7 +181,7 @@ export default function Dashboard() {
           <div className="empty-state">
             <Layers size={36} />
             <h3>No decisions yet</h3>
-            <p>Click "Seed Demo" or "New Decision" to get started.</p>
+            <p>Create your first decision to see it here.</p>
           </div>
         ) : (
           <div className="decisions-table-container">
