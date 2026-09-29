@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  Sliders, 
-  ArrowLeft, 
-  RotateCcw, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle, 
-  ArrowRight,
-  Save,
-  Info
+import {
+  Sliders, ArrowLeft, RotateCcw, CheckCircle2,
+  AlertTriangle, Save, Info, TrendingUp, TrendingDown, Minus
 } from 'lucide-react';
 import { decisionAPI } from '../services/api';
 
@@ -17,226 +10,185 @@ export default function WhatIfSimulator() {
   const { id } = useParams();
   const [decision, setDecision] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [savingSim, setSavingSim] = useState(false);
-  const [simName, setSimName] = useState('Cost-Focused Sensitivity Scenario');
-
-  // Weights state: map of criterion key -> percentage (0-100)
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [simName, setSimName] = useState('Custom Sensitivity Scenario');
   const [weights, setWeights] = useState({});
-  const [simulatedScores, setSimulatedScores] = useState([]);
+  const [simScores, setSimScores] = useState([]);
   const [explanation, setExplanation] = useState('');
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
-  useEffect(() => {
-    loadDecision();
-  }, [id]);
+  useEffect(() => { load(); }, [id]);
 
-  const loadDecision = async () => {
+  const load = async () => {
     try {
       setLoading(true);
       const res = await decisionAPI.getDecisionById(id);
       if (res.success && res.data) {
         setDecision(res.data);
-        const originalWeights = res.data.weights instanceof Map 
-          ? Object.fromEntries(res.data.weights) 
+        const orig = res.data.weights instanceof Map
+          ? Object.fromEntries(res.data.weights)
           : res.data.weights || {};
-
-        setWeights({ ...originalWeights });
-        recalculateSimulation(res.data, originalWeights);
+        setWeights({ ...orig });
+        recalculate(res.data, orig);
       }
-    } catch (err) {
-      console.error('Failed to load decision:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore */ } finally { setLoading(false); }
   };
 
-  // Deterministic local simulation calculation
-  const recalculateSimulation = (currentDecision, currentWeights) => {
-    if (!currentDecision) return;
+  const recalculate = (dec, w) => {
+    if (!dec) return;
+    const criteria = dec.criteria || [];
+    const options = dec.options || [];
 
-    const options = currentDecision.options || [];
-    const criteria = currentDecision.criteria || [];
+    let total = 0;
+    criteria.forEach(c => { total += parseFloat(w[c.key] || 0); });
 
-    // Sum weights
-    let totalWeight = 0;
-    criteria.forEach(c => {
-      totalWeight += parseFloat(currentWeights[c.key] || 0);
-    });
-
-    // Calculate score for each option
-    const calculated = options.map(opt => {
-      let total = 0;
-      const optCriteria = opt.criteria instanceof Map ? Object.fromEntries(opt.criteria) : opt.criteria || {};
-
+    const scored = options.map(opt => {
+      let score = 0;
+      const oc = opt.criteria instanceof Map ? Object.fromEntries(opt.criteria) : opt.criteria || {};
       criteria.forEach(c => {
-        const val = parseFloat(optCriteria[c.key] || 0);
-        const w = totalWeight > 0 ? (parseFloat(currentWeights[c.key] || 0) / totalWeight) : (1 / criteria.length);
-        total += val * w;
+        const val = parseFloat(oc[c.key] || 0);
+        const wt = total > 0 ? parseFloat(w[c.key] || 0) / total : 1 / criteria.length;
+        score += val * wt;
       });
-
-      return {
-        name: opt.name,
-        score: Math.round(total * 10) / 10,
-      };
+      return { name: opt.name, score: Math.round(score * 10) / 10 };
     });
 
-    calculated.sort((a, b) => b.score - a.score);
-    calculated.forEach((c, idx) => { c.rank = idx + 1; });
-    setSimulatedScores(calculated);
+    scored.sort((a, b) => b.score - a.score);
+    scored.forEach((s, i) => { s.rank = i + 1; });
+    setSimScores(scored);
 
-    // Explain trade-off shifts
-    const originalTop = currentDecision.calculatedScores?.[0]?.name;
-    const newTop = calculated[0]?.name;
-
-    if (originalTop && newTop && originalTop !== newTop) {
-      setExplanation(`The top recommendation shifted from ${originalTop} to ${newTop}. This transition occurred because criteria where ${newTop} excels were given higher prioritization in this simulation.`);
+    const origTop = dec.calculatedScores?.[0]?.name;
+    const newTop = scored[0]?.name;
+    if (origTop && newTop && origTop !== newTop) {
+      setExplanation(`The recommendation shifted from ${origTop} to ${newTop} because ${newTop} excels in criteria that now carry higher weight.`);
     } else {
-      setExplanation(`${originalTop} maintains the #1 rank under this weighting configuration, demonstrating strong cross-criteria stability.`);
+      setExplanation(`${newTop} maintains the top rank under this configuration, showing strong cross-criteria robustness.`);
     }
   };
 
-  const handleWeightSliderChange = (key, value) => {
-    const val = parseInt(value, 10);
-    const updated = { ...weights, [key]: val };
+  const handleSlider = (key, val) => {
+    const updated = { ...weights, [key]: parseInt(val, 10) };
     setWeights(updated);
-    recalculateSimulation(decision, updated);
+    recalculate(decision, updated);
   };
 
   const handleReset = () => {
     if (!decision) return;
-    const original = decision.weights instanceof Map ? Object.fromEntries(decision.weights) : decision.weights;
-    setWeights({ ...original });
-    recalculateSimulation(decision, original);
+    const orig = decision.weights instanceof Map ? Object.fromEntries(decision.weights) : decision.weights || {};
+    setWeights({ ...orig });
+    recalculate(decision, orig);
   };
 
-  // Quick preset: Priority on Cost
-  const handlePresetCostPriority = () => {
+  const applyQuickPreset = (dominant) => {
     const updated = { ...weights };
-    Object.keys(updated).forEach(k => { updated[k] = 15; });
-    if (updated.cost !== undefined) updated.cost = 45;
+    const keys = Object.keys(updated);
+    keys.forEach(k => { updated[k] = 10; });
+    if (updated[dominant] !== undefined) updated[dominant] = 50;
     setWeights(updated);
-    recalculateSimulation(decision, updated);
+    recalculate(decision, updated);
   };
 
-  // Quick preset: Priority on Quality
-  const handlePresetQualityPriority = () => {
-    const updated = { ...weights };
-    Object.keys(updated).forEach(k => { updated[k] = 15; });
-    if (updated.quality !== undefined) updated.quality = 45;
-    setWeights(updated);
-    recalculateSimulation(decision, updated);
-  };
-
-  // Save simulation record to backend
-  const handleSaveSimulation = async () => {
+  const handleSave = async () => {
     try {
-      setSavingSim(true);
-      await decisionAPI.simulateWhatIf(id, {
-        simulatedWeights: weights,
-        simulationName: simName,
-      });
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save simulation scenario.');
-    } finally {
-      setSavingSim(false);
-    }
+      setSaving(true);
+      await decisionAPI.simulateWhatIf(id, { simulatedWeights: weights, simulationName: simName });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch { alert('Save failed.'); } finally { setSaving(false); }
   };
 
-  if (loading || !decision) {
-    return (
-      <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-        <div className="spinner" style={{ width: '40px', height: '40px' }} />
-        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Loading simulation model...</p>
-      </div>
-    );
-  }
+  if (loading || !decision) return (
+    <div className="loading-screen">
+      <div className="spinner" style={{ width: 36, height: 36 }} />
+      <p>Loading simulation model…</p>
+    </div>
+  );
 
-  const originalTop = decision.calculatedScores?.[0];
-  const simulatedTop = simulatedScores[0];
-  const hasShifted = originalTop?.name !== simulatedTop?.name;
-  const totalWeight = Object.values(weights).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+  const origTop = decision.calculatedScores?.[0];
+  const simTop = simScores[0];
+  const hasShifted = origTop?.name !== simTop?.name;
+  const totalW = Object.values(weights).reduce((s, v) => s + (parseFloat(v) || 0), 0);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <Link to={`/decisions/${id}`} className="btn btn-sm btn-secondary">
-          <ArrowLeft size={16} /> Back to Decision Analysis
-        </Link>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={handleReset} className="btn btn-sm btn-secondary">
-            <RotateCcw size={14} /> Reset Original Weights
-          </button>
-        </div>
+      {/* Top bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <Link to={`/decisions/${id}`} className="btn btn-sm btn-secondary">
+          <ArrowLeft size={15} /> Back to Analysis
+        </Link>
+        <button onClick={handleReset} className="btn btn-sm btn-secondary">
+          <RotateCcw size={14} /> Reset to Original Weights
+        </button>
       </div>
 
+      {/* Header */}
       <div className="decision-layout-header">
         <div>
           <div className="decision-badge-row">
             <span className="badge badge-purple">What-If Sensitivity Engine</span>
-            <span className="badge badge-advisory">Safe Sandbox Mode</span>
+            <span className="badge badge-advisory">Sandbox Mode — Original Preserved</span>
           </div>
-          <h1 className="decision-title-main">Dynamic What-If Simulator</h1>
+          <h1 className="decision-title-main">What-If Simulator</h1>
           <p className="decision-desc-main">
-            Simulate altered business priorities without modifying the baseline decision. Recalculates candidate scores deterministically in real time.
+            Adjust criteria weights to explore how changing priorities affects the recommendation.
+            The original decision record is never modified.
           </p>
         </div>
       </div>
 
-      {/* Notice Banner */}
       <div className="alert-banner alert-advisory" style={{ marginBottom: 0 }}>
-        <Info size={18} />
+        <Info size={15} />
         <span>
-          <strong>Zero Risk Policy:</strong> Adjusting criteria weights here runs in isolated simulation memory. The original decision and AI recommendation remain untouched.
+          <strong>Zero-risk sandbox.</strong> Simulations run locally and can be optionally saved as separate records. The original decision and AI recommendation remain untouched.
         </span>
       </div>
 
-      {/* Simulator Grid */}
+      {/* Simulator grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.75rem', alignItems: 'start' }}>
-        {/* Interactive Sliders Column */}
+
+        {/* LEFT — Sliders */}
         <div className="hitl-card what-if-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1.15rem' }}>Adjust Criteria Weights</h3>
-            <span className="badge badge-gray">Sum: {totalWeight}%</span>
+            <h3 style={{ fontSize: '1.1rem' }}>Adjust Criteria Weights</h3>
+            <span className={`badge ${Math.abs(totalW - 100) < 1 ? 'badge-success' : 'badge-warning'}`}>
+              Sum: {Math.round(totalW)}%
+            </span>
           </div>
 
-          {/* Quick Presets */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <button onClick={handlePresetCostPriority} className="btn btn-sm btn-outline-primary">
-              ⚡ Prioritize Cost (45%)
-            </button>
-            <button onClick={handlePresetQualityPriority} className="btn btn-sm btn-outline-primary">
-              ⚡ Prioritize Quality (45%)
-            </button>
+          {/* Quick presets */}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+            {decision.criteria.slice(0, 4).map(c => (
+              <button key={c.key} onClick={() => applyQuickPreset(c.key)} className="btn btn-sm btn-secondary"
+                style={{ fontSize: '0.75rem' }}>
+                ↑ {c.name}
+              </button>
+            ))}
           </div>
 
           <div className="weight-slider-group">
-            {decision.criteria.map((c) => {
-              const currentVal = weights[c.key] !== undefined ? weights[c.key] : c.weight;
+            {decision.criteria.map(c => {
+              const current = weights[c.key] !== undefined ? weights[c.key] : c.weight;
+              const orig = c.weight;
+              const delta = current - orig;
               return (
                 <div key={c.key} className="slider-row">
                   <div className="slider-labels">
-                    <span style={{ color: '#ffffff' }}>{c.name}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: '#a5b4fc', fontWeight: 700 }}>
-                      {currentVal}%
-                    </span>
+                    <span style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                    <div style={{ display: 'flex', align: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.72rem', color: delta > 0 ? '#16A34A' : delta < 0 ? '#EF4444' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        {delta > 0 ? `+${delta}` : delta !== 0 ? delta : '±0'}%
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary)', fontWeight: 700 }}>
+                        {current}%
+                      </span>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    className="slider-input"
-                    value={currentVal}
-                    onChange={(e) => handleWeightSliderChange(c.key, e.target.value)}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    <span>Baseline: {c.weight}%</span>
-                    <span>Delta: {currentVal - c.weight > 0 ? `+${currentVal - c.weight}` : currentVal - c.weight}%</span>
+                  <input type="range" min={0} max={100} step={5}
+                    className="slider-input" value={current}
+                    onChange={e => handleSlider(c.key, e.target.value)} />
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Original baseline: {orig}%
                   </div>
                 </div>
               );
@@ -244,107 +196,85 @@ export default function WhatIfSimulator() {
           </div>
         </div>
 
-        {/* Real-time Outcomes & Comparison */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* RIGHT — Results */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
           {/* Shift Banner */}
           <div className="hitl-card" style={{
-            border: hasShifted ? '2px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-accent)',
-            background: hasShifted ? 'linear-gradient(180deg, rgba(30, 27, 20, 0.9) 0%, rgba(19, 27, 46, 0.95) 100%)' : 'var(--bg-card)',
+            border: hasShifted ? '2px solid #FCD34D' : '1px solid #BBF7D0',
+            background: hasShifted ? '#FFFBEB' : '#F0FDF4',
           }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-              Simulation Outcome
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-              {hasShifted ? (
-                <AlertTriangle size={22} color="#f59e0b" />
-              ) : (
-                <CheckCircle2 size={22} color="#10b981" />
-              )}
-              <h3 style={{ fontSize: '1.25rem', color: hasShifted ? '#fde68a' : '#6ee7b7' }}>
-                {hasShifted ? 'Recommendation Inversion Detected!' : 'Recommendation Stable'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.65rem' }}>
+              {hasShifted
+                ? <AlertTriangle size={20} color="#D97706" />
+                : <CheckCircle2 size={20} color="#16A34A" />
+              }
+              <h3 style={{ fontSize: '1.1rem', color: hasShifted ? '#92400E' : '#166534' }}>
+                {hasShifted ? 'Recommendation Shifted!' : 'Recommendation Stable'}
               </h3>
             </div>
-
-            <p style={{ fontSize: '0.875rem', color: '#e2e8f0', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.6, marginBottom: '1.15rem' }}>
               {explanation}
             </p>
 
-            {/* Side by side comparison */}
             <div className="comparison-box">
               <div>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '0.65rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
                   Original Top Pick
-                </span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem' }}>
-                  {originalTop?.name}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#a5b4fc', fontWeight: 600 }}>
-                  Score: {originalTop?.score}
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                  {origTop?.name}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#16A34A', fontSize: '0.875rem' }}>
+                  {origTop?.score}
                 </div>
               </div>
-
-              <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.1)', paddingLeft: '1rem' }}>
-                <span style={{ fontSize: '0.7rem', color: hasShifted ? '#fde68a' : 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '1rem' }}>
+                <div style={{ fontSize: '0.65rem', color: hasShifted ? '#D97706' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.25rem' }}>
                   Simulated Top Pick
-                </span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800, color: hasShifted ? '#fde68a' : '#6ee7b7', marginTop: '0.2rem' }}>
-                  {simulatedTop?.name}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: hasShifted ? '#fde68a' : '#6ee7b7', fontWeight: 600 }}>
-                  Score: {simulatedTop?.score}
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: hasShifted ? '#92400E' : '#166534' }}>
+                  {simTop?.name}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: hasShifted ? '#D97706' : '#16A34A', fontSize: '0.875rem' }}>
+                  {simTop?.score}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Full Simulated Ranking List */}
+          {/* Leaderboard */}
           <div className="hitl-card">
-            <h4 style={{ fontSize: '1rem', marginBottom: '0.75rem' }}>Simulated Leaderboard</h4>
+            <h4 style={{ fontSize: '1rem', marginBottom: '0.85rem' }}>Simulated Leaderboard</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {simulatedScores.map((s, idx) => {
+              {simScores.map(s => {
                 const orig = decision.calculatedScores?.find(o => o.name === s.name);
                 const delta = orig ? Math.round((s.score - orig.score) * 10) / 10 : 0;
+                const DeltaIcon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+                const dColor = delta > 0 ? '#16A34A' : delta < 0 ? '#EF4444' : '#94A3B8';
                 return (
-                  <div
-                    key={s.name}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: 'var(--radius-sm)',
-                      background: idx === 0 ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                      border: idx === 0 ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
-                    }}
-                  >
+                  <div key={s.name} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '0.6rem 0.85rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: s.rank === 1 ? (hasShifted ? '#FFFBEB' : '#F0FDF4') : '#F8FAFC',
+                    border: s.rank === 1 ? `1px solid ${hasShifted ? '#FCD34D' : '#BBF7D0'}` : '1px solid #E2E8F0',
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                       <span style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '50%',
-                        background: idx === 0 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#ffffff',
-                      }}>
-                        {s.rank}
-                      </span>
-                      <span style={{ fontWeight: 600, color: '#ffffff' }}>{s.name}</span>
+                        width: '22px', height: '22px', borderRadius: '50%', fontSize: '0.72rem', fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: s.rank === 1 ? (hasShifted ? '#F59E0B' : '#16A34A') : '#CBD5E1',
+                        color: s.rank <= 2 || !hasShifted ? '#fff' : '#475569',
+                      }}>{s.rank}</span>
+                      <span style={{ fontWeight: s.rank === 1 ? 700 : 500, color: '#0F172A', fontSize: '0.875rem' }}>{s.name}</span>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        fontFamily: 'var(--font-mono)',
-                        color: delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : 'var(--text-muted)',
-                      }}>
-                        {delta > 0 ? `+${delta}` : delta} pts
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.75rem', color: dColor, fontFamily: 'var(--font-mono)' }}>
+                        <DeltaIcon size={12} />
+                        {delta > 0 ? `+${delta}` : delta}
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: s.rank === 1 ? (hasShifted ? '#D97706' : '#16A34A') : '#64748B' }}>
                         {s.score}
                       </span>
                     </div>
@@ -354,31 +284,19 @@ export default function WhatIfSimulator() {
             </div>
           </div>
 
-          {/* Save Scenario Form */}
-          <div className="hitl-card" style={{ padding: '1.25rem' }}>
-            <h4 style={{ fontSize: '0.95rem', marginBottom: '0.5rem' }}>Archive Simulation Scenario</h4>
+          {/* Save Scenario */}
+          <div className="hitl-card" style={{ padding: '1.15rem' }}>
+            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.65rem' }}>Save Scenario</h4>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                type="text"
-                className="form-input"
-                value={simName}
-                onChange={(e) => setSimName(e.target.value)}
-                placeholder="Scenario label"
-              />
-              <button
-                onClick={handleSaveSimulation}
-                disabled={savingSim}
-                className="btn btn-secondary"
-                style={{ flexShrink: 0 }}
-              >
-                <Save size={16} />
-                {savingSim ? 'Saving...' : 'Save'}
+              <input className="form-input" value={simName} onChange={e => setSimName(e.target.value)} placeholder="Scenario name…" />
+              <button onClick={handleSave} disabled={saving} className="btn btn-secondary" style={{ flexShrink: 0 }}>
+                <Save size={14} /> {saving ? '…' : 'Save'}
               </button>
             </div>
-            {savedSuccess && (
-              <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginTop: '0.4rem', display: 'block' }}>
-                ✓ Simulation scenario saved to database!
-              </span>
+            {saved && (
+              <div style={{ fontSize: '0.8rem', color: '#16A34A', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <CheckCircle2 size={13} /> Simulation saved to database.
+              </div>
             )}
           </div>
         </div>

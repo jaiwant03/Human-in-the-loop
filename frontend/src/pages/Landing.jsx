@@ -2,8 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ShieldCheck, Bot, UserCheck, BarChart3,
-  Sliders, Database, CheckCircle2, Sparkles, Brain,
-  GitFork, TrendingUp
+  Sliders, Database, CheckCircle2, Brain, GitFork, TrendingUp
 } from 'lucide-react';
 import { decisionAPI } from '../services/api';
 
@@ -21,56 +20,44 @@ export default function Landing() {
   };
 
   const steps = [
-    { icon: <Brain size={18} />, label: 'Define Decision', color: '#16A34A' },
-    { icon: <Sliders size={18} />, label: 'Set Criteria & Weights', color: '#14B8A6' },
-    { icon: <BarChart3 size={18} />, label: 'System Scores Options', color: '#3B82F6' },
-    { icon: <Bot size={18} />, label: 'AI Explains Results', color: '#7C3AED' },
-    { icon: <UserCheck size={18} />, label: 'Human Decides', color: '#16A34A' },
-    { icon: <Database size={18} />, label: 'Audit Trail Saved', color: '#F59E0B' },
+    { icon: <Brain size={18} />,     label: 'Define Decision',        color: '#16A34A' },
+    { icon: <Sliders size={18} />,   label: 'Set Criteria & Weights', color: '#14B8A6' },
+    { icon: <BarChart3 size={18} />, label: 'System Scores Options',  color: '#3B82F6' },
+    { icon: <Bot size={18} />,       label: 'AI Explains Results',    color: '#7C3AED' },
+    { icon: <UserCheck size={18} />, label: 'Human Decides',          color: '#16A34A' },
+    { icon: <Database size={18} />,  label: 'Audit Trail Saved',      color: '#F59E0B' },
   ];
 
   const features = [
     {
-      icon: <Bot size={22} />,
-      bg: '#F0FDF4',
-      iconColor: '#16A34A',
+      icon: <Bot size={22} />, bg: '#F0FDF4', iconColor: '#16A34A',
       title: 'Deterministic Scoring',
-      desc: 'Weighted multi-criteria algorithm calculates objective scores before the AI sees them. No hallucinated numbers.',
+      desc: 'Weighted multi-criteria algorithm calculates objective scores before AI sees them. No hallucinated numbers.',
     },
     {
-      icon: <UserCheck size={22} />,
-      bg: '#D1FAE5',
-      iconColor: '#059669',
+      icon: <UserCheck size={22} />, bg: '#D1FAE5', iconColor: '#059669',
       title: 'Human Final Authority',
       desc: 'Accept the AI recommendation, choose an alternative, or override entirely. The AI never makes the final call.',
     },
     {
-      icon: <Sliders size={22} />,
-      bg: '#FEF3C7',
-      iconColor: '#D97706',
+      icon: <Sliders size={22} />, bg: '#FEF3C7', iconColor: '#D97706',
       title: 'What-If Simulator',
       desc: 'Adjust criteria weights and see rankings shift in real time — without touching the original decision.',
     },
     {
-      icon: <GitFork size={22} />,
-      bg: '#EDE9FE',
-      iconColor: '#7C3AED',
+      icon: <GitFork size={22} />, bg: '#EDE9FE', iconColor: '#7C3AED',
       title: 'n8n + Groq AI',
-      desc: 'Groq AI accessed exclusively through n8n workflow nodes. API key never exposed to the frontend.',
+      desc: 'Groq AI accessed through n8n workflow nodes. API key never exposed to the frontend.',
     },
     {
-      icon: <TrendingUp size={22} />,
-      bg: '#DBEAFE',
-      iconColor: '#2563EB',
+      icon: <TrendingUp size={22} />, bg: '#DBEAFE', iconColor: '#2563EB',
       title: 'Analytical Confidence',
-      desc: 'Confidence calculated from data completeness, score separation, and criteria coverage — not LLM guesswork.',
+      desc: 'Confidence calculated from data completeness, score separation, and criteria coverage.',
     },
     {
-      icon: <Database size={22} />,
-      bg: '#FEE2E2',
-      iconColor: '#DC2626',
+      icon: <Database size={22} />, bg: '#FEE2E2', iconColor: '#DC2626',
       title: 'Immutable Audit Trail',
-      desc: 'Every AI recommendation and human decision stored separately in MongoDB with full timestamps and reasons.',
+      desc: 'Every AI recommendation and human decision stored separately in MongoDB with full timestamps.',
     },
   ];
 
@@ -87,7 +74,6 @@ export default function Landing() {
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* decorative */}
         <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(22,163,74,0.06)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(22,163,74,0.04)', pointerEvents: 'none' }} />
 
@@ -105,22 +91,13 @@ export default function Landing() {
           while keeping the <strong style={{ color: '#166534' }}>final decision in human hands</strong>.
         </p>
 
-        {/* Flow bar */}
+        {/* Flow bar — informational only */}
         <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          background: '#fff',
-          padding: '0.65rem 1.5rem',
-          borderRadius: '999px',
-          border: '1px solid #D1FAE5',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          color: '#475569',
-          marginBottom: '2rem',
+          display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+          justifyContent: 'center', background: '#fff', padding: '0.65rem 1.5rem',
+          borderRadius: '999px', border: '1px solid #D1FAE5',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)', fontSize: '0.82rem',
+          fontWeight: 600, color: '#475569', marginBottom: '2rem',
         }}>
           <span>AI Recommends</span>
           <ArrowRight size={13} color="#16A34A" />
@@ -133,13 +110,11 @@ export default function Landing() {
           <span style={{ color: '#D97706' }}>System Records</span>
         </div>
 
+        {/* Two primary actions only */}
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/create" className="btn btn-lg btn-primary">
             <Brain size={18} /> Create a Decision
           </Link>
-          <button onClick={handleLaunchDemo} className="btn btn-lg btn-secondary">
-            <Sparkles size={18} color="#16A34A" /> Explore Supplier Demo
-          </button>
           <Link to="/dashboard" className="btn btn-lg btn-secondary">
             <BarChart3 size={18} /> View Dashboard
           </Link>
@@ -152,27 +127,14 @@ export default function Landing() {
           <h2 style={{ fontSize: '1.65rem', color: '#0F172A', marginBottom: '0.5rem' }}>How It Works</h2>
           <p style={{ color: '#64748B', fontSize: '0.95rem' }}>Six clear steps from problem to auditable human decision</p>
         </div>
-
         <div style={{ display: 'flex', gap: '0', justifyContent: 'center', flexWrap: 'wrap' }}>
           {steps.map((step, idx) => (
             <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '1.25rem 1rem',
-                minWidth: '100px',
-              }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1.25rem 1rem', minWidth: '100px' }}>
                 <div style={{
-                  width: '44px', height: '44px',
-                  borderRadius: '12px',
-                  background: step.color + '18',
-                  border: `1px solid ${step.color}40`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: step.color,
+                  width: '44px', height: '44px', borderRadius: '12px',
+                  background: step.color + '18', border: `1px solid ${step.color}40`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: step.color,
                 }}>
                   {step.icon}
                 </div>
@@ -181,32 +143,25 @@ export default function Landing() {
                   {step.label}
                 </div>
               </div>
-              {idx < steps.length - 1 && (
-                <ArrowRight size={16} color="#CBD5E1" style={{ flexShrink: 0 }} />
-              )}
+              {idx < steps.length - 1 && <ArrowRight size={16} color="#CBD5E1" style={{ flexShrink: 0 }} />}
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── FEATURES GRID ── */}
+      {/* ── FEATURES ── */}
       <section>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.65rem', color: '#0F172A', marginBottom: '0.5rem' }}>Platform Features</h2>
           <p style={{ color: '#64748B', fontSize: '0.95rem' }}>Built for responsible AI decision-making</p>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: '1.25rem' }}>
           {features.map((f, idx) => (
-            <div key={idx} className="hitl-card hitl-card-interactive" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div key={idx} className="hitl-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={{
-                width: '42px', height: '42px',
-                borderRadius: '10px',
-                background: f.bg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: f.iconColor,
+                width: '42px', height: '42px', borderRadius: '10px',
+                background: f.bg, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: f.iconColor,
               }}>
                 {f.icon}
               </div>
@@ -217,30 +172,27 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── DEMO SCENARIO CARD ── */}
+      {/* ── DEMO SCENARIO ── */}
       <section>
         <div className="hitl-card" style={{
           background: 'linear-gradient(135deg, #F0FDF4 0%, #fff 100%)',
-          border: '1px solid #BBF7D0',
-          padding: '2.5rem',
+          border: '1px solid #BBF7D0', padding: '2.5rem',
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '2.5rem', alignItems: 'center' }}>
             <div>
-              <div className="badge badge-purple" style={{ marginBottom: '1rem' }}>Canonical Benchmark Scenario</div>
+              <div className="badge badge-green" style={{ marginBottom: '1rem' }}>Live Demo Scenario</div>
               <h2 style={{ fontSize: '1.75rem', color: '#0F172A', marginBottom: '0.85rem' }}>
                 Strategic Supplier Selection
               </h2>
               <p style={{ color: '#475569', lineHeight: 1.65, marginBottom: '1.25rem' }}>
-                A real-world enterprise procurement trade-off between
-                <strong style={{ color: '#166534' }}> Supplier A</strong> (superior quality & reliability)
-                and <strong style={{ color: '#166534' }}>Supplier B</strong> (lower cost & rapid delivery)
-                — evaluated across 5 weighted criteria.
+                A real-world enterprise procurement evaluation across Cost, Quality,
+                Delivery, Reliability and Risk — demonstrating the full HITL workflow.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {[
-                  'Weighted scoring across Cost, Quality, Delivery, Reliability, Risk',
+                  'Weighted deterministic scoring across 5 criteria',
                   'Groq AI explains trade-offs via n8n workflow',
-                  'Human evaluates, accepts, overrides, or picks alternative',
+                  'Human accepts, overrides, or picks alternative',
                   'Full audit trail stored in MongoDB',
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#374151' }}>
@@ -249,12 +201,13 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
+              {/* Single demo button */}
               <button onClick={handleLaunchDemo} className="btn btn-primary">
-                Launch Demo Scenario <ArrowRight size={16} />
+                Launch Demo <ArrowRight size={16} />
               </button>
             </div>
 
-            {/* Mini preview card */}
+            {/* Static preview card */}
             <div className="hitl-card" style={{ border: '1px solid #D1FAE5' }}>
               <div style={{ fontSize: '0.7rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
                 Evaluation Preview
@@ -265,12 +218,8 @@ export default function Landing() {
                 { name: 'Supplier C', score: 78.2, rank: 3 },
               ].map((s) => (
                 <div key={s.name} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.6rem 0.75rem',
-                  borderRadius: '8px',
-                  marginBottom: '0.5rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '0.6rem 0.75rem', borderRadius: '8px', marginBottom: '0.5rem',
                   background: s.rank === 1 ? '#F0FDF4' : '#F8FAFC',
                   border: s.rank === 1 ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
                 }}>
@@ -291,16 +240,11 @@ export default function Landing() {
                 </div>
               ))}
               <div style={{
-                marginTop: '0.75rem',
-                padding: '0.7rem',
-                borderRadius: '8px',
-                background: '#EFF6FF',
-                border: '1px solid #BFDBFE',
-                fontSize: '0.78rem',
-                color: '#1E40AF',
-                lineHeight: 1.5,
+                marginTop: '0.75rem', padding: '0.7rem', borderRadius: '8px',
+                background: '#EFF6FF', border: '1px solid #BFDBFE',
+                fontSize: '0.78rem', color: '#1E40AF', lineHeight: 1.5,
               }}>
-                <strong>Try it:</strong> Use the What-If Simulator to increase Cost weight → Supplier B takes the lead → override AI with justification.
+                <strong>Try it:</strong> Use the What-If Simulator to change weights and see Supplier B take the lead.
               </div>
             </div>
           </div>
@@ -309,27 +253,16 @@ export default function Landing() {
 
       {/* ── PHILOSOPHY BANNER ── */}
       <section style={{
-        background: 'var(--bg-sidebar)',
-        borderRadius: '16px',
-        padding: '2.5rem',
-        textAlign: 'center',
-        color: '#fff',
+        background: 'var(--bg-sidebar)', borderRadius: '16px',
+        padding: '2.5rem', textAlign: 'center',
       }}>
         <h2 style={{ fontSize: '1.75rem', color: '#fff', marginBottom: '0.75rem' }}>
           AI recommends. <span style={{ color: '#86EFAC' }}>Humans decide.</span>
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: '540px', margin: '0 auto 2rem', lineHeight: 1.65, fontSize: '0.95rem' }}>
-          This platform enforces a strict boundary between AI advisory output and human final authority.
+        <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.65, fontSize: '0.95rem' }}>
           Every recommendation is explained, challenged, and ultimately owned by a human.
+          No AI output is ever automatically saved as the final decision.
         </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/create" className="btn btn-lg" style={{ background: '#16A34A', color: '#fff', boxShadow: '0 2px 12px rgba(22,163,74,0.4)' }}>
-            Start Now <ArrowRight size={17} />
-          </Link>
-          <Link to="/dashboard" className="btn btn-lg" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
-            View Dashboard
-          </Link>
-        </div>
       </section>
     </div>
   );
