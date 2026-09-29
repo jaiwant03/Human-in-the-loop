@@ -70,15 +70,55 @@ MongoDB Decision Audit Log
 
 | Layer | Technology |
 |---|---|
-| Frontend | React.js (Vite), JavaScript, CSS, Axios, React Router, Chart.js |
+| Frontend | React.js (Vite), JavaScript, CSS (White + Green Design), Axios, React Router, Chart.js |
 | Backend | Node.js, Express.js, Mongoose, Axios, dotenv, CORS |
 | Database | MongoDB |
 | AI Orchestration | n8n (Webhook Workflow) |
 | LLM | Groq API (configurable model, default: `llama-3.3-70b-versatile`) |
+| Design System | Professional WHITE + GREEN color palette |
+
+---
+
+## Design System
+
+The application uses a professional **WHITE + GREEN** design language:
+
+### Color Palette
+
+| Color | Hex | Usage |
+|---|---|---|
+| **Primary Green** | `#16A34A` | Primary actions, buttons, highlights |
+| **Dark Green** | `#166534` | Headings, emphasis text |
+| **Light Green** | `#DCFCE7` | Borders, subtle backgrounds |
+| **Very Light Green** | `#F0FDF4` | Card hover states, panels |
+| **White** | `#FFFFFF` | Card backgrounds, primary surface |
+| **Light Gray** | `#F8FAFC` | Page background |
+| **Border Gray** | `#E2E8F0` | Borders, dividers |
+| **Text Primary** | `#0F172A` | Primary text content |
+| **Text Secondary** | `#64748B` | Secondary text, labels |
+
+### Design Principles
+
+- **Clean & Professional**: White backgrounds with green accents
+- **Minimal**: Spacious layouts, thin borders, soft shadows
+- **Enterprise-Ready**: Trustworthy, polished, modern
+- **Accessible**: High contrast, readable typography
+- **Consistent**: Unified design tokens across all components
+
+### Key Elements
+
+- White cards with subtle shadows
+- Green primary buttons with gradient
+- 12-16px border radius for softness
+- Green status indicators and highlights
+- Professional sans-serif typography
+- Responsive grid layouts
 
 ---
 
 ## n8n Workflow
+
+**For detailed n8n setup instructions, see [docs/N8N_SETUP.md](docs/N8N_SETUP.md)**
 
 Import `n8n/Decision_Intelligence_Workflow.json` into your n8n instance:
 
