@@ -8,6 +8,7 @@ import DecisionAnalysis from './pages/DecisionAnalysis';
 import DecisionHistory from './pages/DecisionHistory';
 import DecisionDetails from './pages/DecisionDetails';
 import WhatIfSimulator from './pages/WhatIfSimulator';
+import DecisionChat from './pages/DecisionChat';
 
 import './styles/global.css';
 import './styles/dashboard.css';
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/create" element={<CreateDecision />} />
+            <Route path="/chat" element={<DecisionChat />} />
             <Route path="/decisions/:id" element={<DecisionAnalysis />} />
             <Route path="/decisions/:id/details" element={<DecisionDetails />} />
             <Route path="/decisions/:id/simulate" element={<WhatIfSimulator />} />

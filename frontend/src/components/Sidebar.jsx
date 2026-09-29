@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ShieldCheck, LayoutDashboard, PlusCircle, History,
-  ChevronLeft, ChevronRight, Brain
+  ChevronLeft, ChevronRight, Brain, MessageSquare
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -11,9 +11,10 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
-    { path: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { path: '/create',    icon: <PlusCircle size={20} />,      label: 'New Decision' },
-    { path: '/history',   icon: <History size={20} />,         label: 'Audit Trail' },
+    { path: '/dashboard',  icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+    { path: '/create',     icon: <PlusCircle size={20} />,      label: 'New Decision' },
+    { path: '/chat',       icon: <MessageSquare size={20} />,   label: 'Chat Assistant' },
+    { path: '/history',    icon: <History size={20} />,         label: 'Audit Trail' },
   ];
 
   return (
