@@ -81,7 +81,7 @@
   --shadow-glow:0 0 0 3px rgba(22,163,74,0.20);
 
   /* Sidebar width */
-  --sidebar-width:         240px;
+  --sidebar-width:         180px;
   --sidebar-collapsed-width: 64px;
 }
 
@@ -164,10 +164,13 @@ body {
 
 .sidebar__brand-name {
   display: block;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
   line-height: 1.2;
   white-space: nowrap;
 }
