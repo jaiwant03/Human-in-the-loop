@@ -40,6 +40,19 @@ export const decisionAPI = {
   },
 };
 
+// AI suggestion endpoints — used in the HITL create workflow
+export const aiAPI = {
+  suggestCriteria: async (context) => {
+    const res = await apiClient.post('/ai/suggest-criteria', context, { timeout: 40000 });
+    return res.data;
+  },
+
+  suggestOptions: async (context) => {
+    const res = await apiClient.post('/ai/suggest-options', context, { timeout: 40000 });
+    return res.data;
+  },
+};
+
 export const dashboardAPI = {
   getStats: async () => {
     const res = await apiClient.get('/dashboard/stats');

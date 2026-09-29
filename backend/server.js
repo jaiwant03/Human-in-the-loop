@@ -40,6 +40,7 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/decisions', require('./routes/decisionRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/ai', require('./routes/aiSuggestRoutes'));
 
 // 404 Handler
 app.use((req, res) => {
