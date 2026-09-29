@@ -156,7 +156,7 @@ export default function WhatIfSimulator() {
             </span>
           </div>
 
-          {/* Quick presets */}
+          {/* Quick weight boost buttons */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
             {decision.criteria.slice(0, 4).map(c => (
               <button key={c.key} onClick={() => applyQuickPreset(c.key)} className="btn btn-sm btn-secondary"
