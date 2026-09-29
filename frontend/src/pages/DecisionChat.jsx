@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Send, Bot, UserCheck, Sparkles, ArrowRight,
-  CheckCircle2, AlertTriangle, BarChart3, Lightbulb,
+  CheckCircle2, AlertTriangle, BarChart3,
   RefreshCw, ExternalLink, Info, ChevronDown, ChevronUp,
-  ShieldCheck, Loader2
+  Loader2, Paperclip, Globe, PlusCircle, Zap
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -15,82 +15,153 @@ import { chatAPI, decisionAPI } from '../services/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// ── Example prompts shown as quick-start suggestions ──
+// ── Example cards matching the screenshot ─────────────────────
 const EXAMPLES = [
-  'Help me choose between Laptop A (fast CPU, $1500, 6hr battery) and Laptop B (mid CPU, $900, 10hr battery) based on price, performance, and battery.',
-  'Should I go with Supplier A (quality 90, cost 70, delivery 85) or Supplier B (quality 75, cost 95, delivery 90) for our new product line?',
-  'Compare three cloud providers: AWS (reliability 95, cost 65, support 88), Azure (reliability 90, cost 72, support 92), GCP (reliability 88, cost 80, support 78).',
-  'I need to pick a marketing agency. Agency A is creative but slow. Agency B is reliable but expensive. Agency C is affordable but new.',
+  {
+    icon: '💻',
+    title: 'Compare laptops for AI/ML development',
+    desc: 'Find the best laptop based on performance, price, battery life and more.',
+    color: '#E0F2FE',
+    iconBg: '#BFDBFE',
+  },
+  {
+    icon: '☁️',
+    title: 'Choose the best cloud provider',
+    desc: 'Compare AWS, Azure, GCP based on cost, performance, security and scalability.',
+    color: '#F0FDF4',
+    iconBg: '#BBF7D0',
+  },
+  {
+    icon: '🤝',
+    title: 'Compare suppliers',
+    desc: 'Evaluate suppliers based on cost, quality, delivery time and reliability.',
+    color: '#FFF7ED',
+    iconBg: '#FED7AA',
+  },
+  {
+    icon: '</>',
+    title: 'Evaluate project technology options',
+    desc: 'Compare different technology stacks for a new project.',
+    color: '#FAF5FF',
+    iconBg: '#E9D5FF',
+  },
 ];
 
-// ── A single chat bubble ──
-function ChatBubble({ msg }) {
-  const isUser = msg.role === 'user';
-  const isSystem = msg.role === 'system';
+// ── 5-step workflow cards ──────────────────────────────────────
+const WORKFLOW_STEPS = [
+  {
+    icon: <Bot size={18} />,
+    title: 'AI Suggests',
+    step: 1,
+    desc: 'I analyze your request and suggest options, criteria and evidence.',
+    iconBg: '#DBEAFE',
+    iconColor: '#2563EB',
+  },
+  {
+    icon: <UserCheck size={18} />,
+    title: 'You Review',
+    step: 2,
+    desc: 'You check, edit or add based on your requirements.',
+    iconBg: '#D1FAE5',
+    iconColor: '#059669',
+  },
+  {
+    icon: <Zap size={18} />,
+    title: 'System Calculates',
+    step: 3,
+    desc: 'Scores are calculated deterministically using your criteria and weights.',
+    iconBg: '#FEF3C7',
+    iconColor: '#D97706',
+  },
+  {
+    icon: <Sparkles size={18} />,
+    title: 'AI Explains',
+    step: 4,
+    desc: 'I explain the results, trade-offs, risks and key insights.',
+    iconBg: '#EDE9FE',
+    iconColor: '#7C3AED',
+  },
+  {
+    icon: <CheckCircle2 size={18} />,
+    title: 'You Decide',
+    step: 5,
+    desc: 'You make the final decision. AI advises. You control the outcome.',
+    iconBg: '#DCFCE7',
+    iconColor: '#16A34A',
+    highlight: true,
+  },
+];
 
-  if (isSystem) {
-    return (
-      <div style={{
-        display: 'flex', justifyContent: 'center', margin: '0.5rem 0',
-      }}>
-        <span style={{
-          fontSize: '0.75rem', color: 'var(--text-muted)',
-          background: 'var(--bg-secondary)', padding: '0.25rem 0.85rem',
-          borderRadius: '999px', border: '1px solid var(--border-subtle)',
-        }}>
-          {msg.content}
-        </span>
-      </div>
-    );
-  }
-
+// ── Robot SVG illustration ──────────────────────────────────────
+function RobotIllustration() {
   return (
     <div style={{
-      display: 'flex',
-      justifyContent: isUser ? 'flex-end' : 'flex-start',
-      margin: '0.4rem 0',
-      gap: '0.6rem',
-      alignItems: 'flex-end',
+      width: '110px', height: '110px', flexShrink: 0,
+      background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+      borderRadius: '50%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      border: '2px solid #BBF7D0',
     }}>
-      {!isUser && (
-        <div style={{
-          width: '30px', height: '30px', borderRadius: '50%',
-          background: 'var(--primary-gradient)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Bot size={15} color="#fff" />
-        </div>
-      )}
-      <div style={{
-        maxWidth: '75%',
-        padding: '0.7rem 1rem',
-        borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-        background: isUser ? 'var(--primary-gradient)' : 'var(--bg-card)',
-        color: isUser ? '#fff' : 'var(--text-primary)',
-        border: isUser ? 'none' : '1px solid var(--border-subtle)',
-        fontSize: '0.875rem',
-        lineHeight: 1.6,
-        boxShadow: 'var(--shadow-sm)',
-        whiteSpace: 'pre-wrap',
-      }}>
-        {msg.content}
-      </div>
-      {isUser && (
-        <div style={{
-          width: '30px', height: '30px', borderRadius: '50%',
-          background: '#F0FDF4', border: '2px solid var(--primary-light)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <UserCheck size={14} color="#16A34A" />
-        </div>
-      )}
+      <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+        {/* Body */}
+        <rect x="12" y="22" width="36" height="28" rx="8" fill="#16A34A" opacity="0.15" stroke="#16A34A" strokeWidth="1.5" />
+        {/* Head */}
+        <rect x="16" y="8" width="28" height="20" rx="6" fill="#16A34A" opacity="0.2" stroke="#16A34A" strokeWidth="1.5" />
+        {/* Eyes */}
+        <circle cx="23" cy="17" r="3.5" fill="#16A34A" />
+        <circle cx="37" cy="17" r="3.5" fill="#16A34A" />
+        <circle cx="24" cy="16" r="1.2" fill="white" />
+        <circle cx="38" cy="16" r="1.2" fill="white" />
+        {/* Mouth */}
+        <path d="M24 23 Q30 27 36 23" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        {/* Antenna */}
+        <line x1="30" y1="8" x2="30" y2="3" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="30" cy="2.5" r="2" fill="#16A34A" />
+        {/* Arms */}
+        <rect x="4" y="26" width="8" height="16" rx="4" fill="#16A34A" opacity="0.3" stroke="#16A34A" strokeWidth="1" />
+        <rect x="48" y="26" width="8" height="16" rx="4" fill="#16A34A" opacity="0.3" stroke="#16A34A" strokeWidth="1" />
+        {/* Chest icons */}
+        <rect x="22" y="30" width="16" height="10" rx="3" fill="#16A34A" opacity="0.25" />
+        <line x1="26" y1="35" x2="34" y2="35" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
     </div>
   );
 }
 
-// ── Score bar chart ──
+// ── Browser/chart illustration on right side of hero ───────────
+function BrowserIllustration() {
+  return (
+    <div style={{
+      width: '160px', height: '110px', flexShrink: 0,
+      background: '#fff', borderRadius: '12px',
+      border: '1.5px solid #E2E8F0',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Browser chrome */}
+      <div style={{ background: '#F8FAFC', padding: '6px 8px', borderBottom: '1px solid #E2E8F0', display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FCA5A5' }} />
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FCD34D' }} />
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6EE7B7' }} />
+      </div>
+      {/* Content */}
+      <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+        {[85, 65, 45].map((w, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '0.55rem', color: '#94A3B8', width: '24px' }}>Opt {i + 1}</div>
+            <div style={{ flex: 1, height: '6px', background: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: `${w}%`, height: '100%', background: i === 0 ? '#16A34A' : '#86EFAC', borderRadius: '3px' }} />
+            </div>
+            <div style={{ fontSize: '0.55rem', color: '#16A34A', fontWeight: 700 }}>{w}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Score bar chart ────────────────────────────────────────────
 function ScoreBarChart({ scores }) {
   if (!scores || scores.length === 0) return null;
   const sorted = [...scores].sort((a, b) => (a.rank || 0) - (b.rank || 0));
@@ -100,54 +171,31 @@ function ScoreBarChart({ scores }) {
     datasets: [{
       label: 'Weighted Score',
       data: sorted.map(s => s.score || s.weightedScore || 0),
-      backgroundColor: sorted.map((s, i) =>
-        i === 0 ? 'rgba(22,163,74,0.85)' : 'rgba(22,163,74,0.35)'
-      ),
-      borderColor: sorted.map((s, i) =>
-        i === 0 ? '#16A34A' : '#86EFAC'
-      ),
+      backgroundColor: sorted.map((_, i) => i === 0 ? 'rgba(22,163,74,0.85)' : 'rgba(22,163,74,0.35)'),
+      borderColor: sorted.map((_, i) => i === 0 ? '#16A34A' : '#86EFAC'),
       borderWidth: 2,
       borderRadius: 8,
     }],
   };
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#0F172A',
-        titleColor: '#fff',
-        bodyColor: '#94A3B8',
-        callbacks: { label: ctx => `Score: ${ctx.parsed.y} / 100` },
-      },
-    },
-    scales: {
-      y: {
-        min: 0, max: 100,
-        ticks: { color: '#94A3B8', font: { family: 'Plus Jakarta Sans' } },
-        grid: { color: '#F1F5F9' },
-      },
-      x: {
-        ticks: { color: '#0F172A', font: { weight: '600', family: 'Plus Jakarta Sans' } },
-        grid: { display: false },
-      },
-    },
-  };
-
   return (
-    <div style={{ height: '200px', position: 'relative' }}>
-      <Bar data={data} options={options} />
+    <div style={{ height: '180px', position: 'relative' }}>
+      <Bar data={data} options={{
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0F172A', titleColor: '#fff', bodyColor: '#94A3B8' } },
+        scales: {
+          y: { min: 0, max: 100, ticks: { color: '#94A3B8' }, grid: { color: '#F1F5F9' } },
+          x: { ticks: { color: '#0F172A', font: { weight: '600' } }, grid: { display: false } },
+        },
+      }} />
     </div>
   );
 }
 
-// ── Full decision analysis result panel ──
-function DecisionResultPanel({ result, onViewFull, onFinalize }) {
-  const [showEvidence, setShowEvidence] = useState(false);
-  const [showRisks, setShowRisks] = useState(false);
-  const [decisionMode, setDecisionMode] = useState('ACCEPT_AI');
+// ── Decision result panel ─────────────────────────────────────
+function DecisionResultPanel({ result, onFinalize }) {
+  const [showMore, setShowMore] = useState(false);
+  const [mode, setMode] = useState('ACCEPT_AI');
   const [selectedOption, setSelectedOption] = useState('');
   const [reason, setReason] = useState('');
   const [finalizing, setFinalizing] = useState(false);
@@ -161,485 +209,208 @@ function DecisionResultPanel({ result, onViewFull, onFinalize }) {
 
   const handleFinalize = async () => {
     if (!result.decisionId) return;
-    if (decisionMode === 'OVERRIDE_AI' && (!reason || reason.trim().length < 5)) {
-      alert('Please enter a justification reason for the override.');
-      return;
-    }
-    const option = decisionMode === 'ACCEPT_AI'
-      ? ai.recommendation.option
-      : selectedOption;
-    if (!option) { alert('Please select an option.'); return; }
-
+    if (mode === 'OVERRIDE_AI' && reason.trim().length < 5) { alert('Enter a justification reason.'); return; }
+    const option = mode === 'ACCEPT_AI' ? ai.recommendation.option : selectedOption;
+    if (!option) { alert('Select an option.'); return; }
     try {
       setFinalizing(true);
       await decisionAPI.finalizeDecision(result.decisionId, {
-        option,
-        type: decisionMode,
-        reason: reason || (decisionMode === 'ACCEPT_AI' ? 'Accepted AI recommendation.' : 'Alternative selected.'),
+        option, type: mode,
+        reason: reason || (mode === 'ACCEPT_AI' ? 'Accepted AI recommendation.' : 'Alternative selected.'),
       });
-      setFinalized({ option, type: decisionMode, reason });
-    } catch (e) {
-      alert(e.response?.data?.message || 'Failed to save decision.');
-    } finally {
-      setFinalizing(false);
-    }
+      setFinalized({ option, type: mode });
+    } catch (e) { alert(e.response?.data?.message || 'Failed to save.'); }
+    finally { setFinalizing(false); }
   };
 
   if (!ai) return null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-      {/* Title */}
-      <div style={{
-        background: 'var(--primary-very-light)', border: '1px solid var(--primary-light)',
-        borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem',
-      }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
-          Decision Analysis Complete
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+      {/* Header */}
+      <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '1rem' }}>
+        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>
+          Analysis Complete
         </div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-          {result.parsedDecision?.title || 'Decision'}
-        </div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-          {result.parsedDecision?.category} · {scores.length} options · {result.parsedDecision?.criteria?.length} criteria
-        </div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>{result.parsedDecision?.title || 'Decision'}</div>
+        <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '0.2rem' }}>{scores.length} options · {result.parsedDecision?.criteria?.length} criteria</div>
       </div>
 
-      {/* Scores chart */}
-      <div className="hitl-card" style={{ padding: '1.15rem' }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.85rem' }}>
-          Weighted Scores
-        </div>
+      {/* Scores */}
+      <div className="hitl-card" style={{ padding: '1rem' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>Scores</div>
         <ScoreBarChart scores={scores} />
       </div>
 
-      {/* Recommendation + Confidence */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div className="hitl-card" style={{
-          padding: '1rem', background: 'linear-gradient(135deg,#F0FDF4,#fff)',
-          border: '1px solid #BBF7D0',
-        }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
-            AI Recommendation
-          </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#166534' }}>
-            {ai.recommendation?.option}
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem', fontWeight: 700, color: '#16A34A' }}>
-            {ai.recommendation?.score} / 100
-          </div>
-          <div className="badge badge-advisory" style={{ marginTop: '0.5rem', fontSize: '0.65rem' }}>
-            Advisory Only
-          </div>
+      {/* Recommendation */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '0.85rem' }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#16A34A', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Recommended</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#166534' }}>{ai.recommendation?.option}</div>
+          <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#16A34A', fontSize: '0.85rem' }}>{ai.recommendation?.score}/100</div>
+          <span style={{ fontSize: '0.6rem', background: '#DBEAFE', color: '#1E40AF', padding: '0.15rem 0.5rem', borderRadius: '999px', fontWeight: 700 }}>Advisory Only</span>
         </div>
-
-        <div className="hitl-card" style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>
-            Confidence
-          </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: confColor }}>
-            {conf}%
-          </div>
-          <div style={{ fontSize: '0.8rem', color: confColor, fontWeight: 600 }}>
-            {ai.confidenceCategory || (conf >= 80 ? 'High' : conf >= 60 ? 'Medium' : 'Low')}
-          </div>
-          <div style={{ height: '4px', background: '#E2E8F0', borderRadius: '99px', marginTop: '0.5rem', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${conf}%`, background: confColor, borderRadius: '99px', transition: 'width 0.5s' }} />
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '0.85rem' }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Confidence</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: confColor }}>{conf}%</div>
+          <div style={{ fontSize: '0.75rem', color: confColor, fontWeight: 600 }}>{ai.confidenceCategory?.replace(' Confidence', '') || 'Medium'}</div>
+          <div style={{ height: '4px', background: '#E2E8F0', borderRadius: '999px', marginTop: '0.4rem' }}>
+            <div style={{ width: `${conf}%`, height: '100%', background: confColor, borderRadius: '999px' }} />
           </div>
         </div>
       </div>
 
       {/* Summary */}
       {ai.summary && (
-        <div className="hitl-card" style={{ padding: '1rem', background: '#F8FAFC' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
-            AI Summary
-          </div>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.65 }}>{ai.summary}</p>
+        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '0.85rem', fontSize: '0.825rem', color: '#475569', lineHeight: 1.6 }}>
+          {ai.summary}
         </div>
       )}
 
-      {/* Reasons */}
-      {ai.reasons?.length > 0 && (
-        <div className="hitl-card" style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
-            Key Reasons
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {ai.reasons.map((r, i) => (
-              <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                <CheckCircle2 size={14} color="#16A34A" style={{ flexShrink: 0, marginTop: '3px' }} />
-                {r}
+      {/* Show more */}
+      {(ai.evidence?.length > 0 || ai.risks?.length > 0) && (
+        <button onClick={() => setShowMore(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#16A34A', fontWeight: 600 }}>
+          {showMore ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          {showMore ? 'Hide details' : 'Show evidence & risks'}
+        </button>
+      )}
+
+      {showMore && (
+        <>
+          {ai.evidence?.slice(0, 4).map((e, i) => (
+            <div key={i} style={{
+              padding: '0.65rem 0.85rem', borderRadius: '8px',
+              borderLeft: `3px solid ${e.impact === 'positive' ? '#16A34A' : '#F59E0B'}`,
+              background: e.impact === 'positive' ? '#F0FDF4' : '#FFFBEB',
+              fontSize: '0.8rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
+                <span style={{ fontWeight: 700, color: '#0F172A' }}>{e.factor || e.criterion}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: e.impact === 'positive' ? '#16A34A' : '#D97706' }}>{e.value}/100</span>
               </div>
-            ))}
-          </div>
-        </div>
+              <p style={{ color: '#475569', lineHeight: 1.4, margin: 0 }}>{e.explanation}</p>
+            </div>
+          ))}
+        </>
       )}
 
-      {/* Evidence toggle */}
-      {ai.evidence?.length > 0 && (
-        <div className="hitl-card" style={{ padding: '1rem' }}>
-          <button
-            onClick={() => setShowEvidence(v => !v)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Supporting Evidence ({ai.evidence.length})
-            </span>
-            {showEvidence ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          {showEvidence && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-              {ai.evidence.map((e, i) => (
-                <div key={i} style={{
-                  padding: '0.65rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  borderLeft: `3px solid ${e.impact === 'positive' ? '#16A34A' : '#F59E0B'}`,
-                  background: e.impact === 'positive' ? '#F0FDF4' : '#FFFBEB',
-                  fontSize: '0.82rem',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{e.factor || e.criterion}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: e.impact === 'positive' ? '#16A34A' : '#D97706' }}>
-                      {e.value}/100
-                    </span>
-                  </div>
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{e.explanation}</p>
-                </div>
-              ))}
-            </div>
+      {/* Human decision */}
+      {finalized ? (
+        <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: '10px', padding: '1rem' }}>
+          <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.25rem' }}>✓ Human Decision Recorded</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A' }}>{finalized.option}</div>
+          {result.decisionId && (
+            <Link to={`/decisions/${result.decisionId}`} style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem', textDecoration: 'none' }}>
+              View full analysis <ExternalLink size={11} />
+            </Link>
           )}
         </div>
-      )}
-
-      {/* Risks toggle */}
-      {ai.risks?.length > 0 && (
-        <div className="hitl-card" style={{ padding: '1rem' }}>
-          <button
-            onClick={() => setShowRisks(v => !v)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Risks ({ai.risks.length})
-            </span>
-            {showRisks ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          {showRisks && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-              {ai.risks.map((r, i) => {
-                const sev = r.severity?.toLowerCase() || 'medium';
-                const col = sev === 'high' ? '#DC2626' : sev === 'medium' ? '#D97706' : '#16A34A';
-                return (
-                  <div key={i} style={{
-                    padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)',
-                    background: sev === 'high' ? '#FEE2E2' : sev === 'medium' ? '#FEF3C7' : '#D1FAE5',
-                    border: `1px solid ${sev === 'high' ? '#FCA5A5' : sev === 'medium' ? '#FCD34D' : '#6EE7B7'}`,
-                    fontSize: '0.82rem',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{r.risk}</span>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: col, textTransform: 'uppercase' }}>{sev}</span>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{r.explanation}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Alternatives */}
-      {ai.alternatives?.length > 0 && (
-        <div className="hitl-card" style={{ padding: '1rem' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.6rem' }}>
-            Alternative Options
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {ai.alternatives.map((a, i) => (
-              <div key={i} style={{
-                padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)',
-                background: '#F8FAFC', border: '1px solid var(--border-subtle)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem',
-              }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
-                    {a.option}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>{a.reason}</div>
-                </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#64748B', fontSize: '0.875rem', flexShrink: 0 }}>
-                  {a.score}
-                </span>
-              </div>
+      ) : (
+        <div style={{ background: '#fff', border: '2px solid #DCFCE7', borderRadius: '12px', padding: '1rem' }}>
+          <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Your Decision</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.35rem', marginBottom: '0.85rem' }}>
+            {[['ACCEPT_AI', 'Accept AI', '#D1FAE5', '#16A34A'], ['SELECT_ALTERNATIVE', 'Alternative', '#DBEAFE', '#2563EB'], ['OVERRIDE_AI', 'Override', '#FEF3C7', '#D97706']].map(([m, label, bg, color]) => (
+              <button key={m} onClick={() => setMode(m)} style={{
+                padding: '0.5rem', fontSize: '0.72rem', fontWeight: 700,
+                border: `1px solid ${mode === m ? color : '#E2E8F0'}`,
+                borderRadius: '8px', cursor: 'pointer',
+                background: mode === m ? bg : '#F8FAFC',
+                color: mode === m ? color : '#64748B',
+              }}>{label}</button>
             ))}
           </div>
+          {mode !== 'ACCEPT_AI' && (
+            <select className="form-select" style={{ marginBottom: '0.5rem', fontSize: '0.85rem' }} value={selectedOption} onChange={e => setSelectedOption(e.target.value)}>
+              <option value="">-- Select option --</option>
+              {(result.parsedDecision?.options || []).filter(o => mode === 'OVERRIDE_AI' || o.name !== ai.recommendation?.option).map(o => (
+                <option key={o.name} value={o.name}>{o.name}</option>
+              ))}
+            </select>
+          )}
+          {mode === 'OVERRIDE_AI' && (
+            <textarea className="form-textarea" rows={2} value={reason} onChange={e => setReason(e.target.value)} placeholder="Justification required…" style={{ marginBottom: '0.5rem', fontSize: '0.82rem' }} />
+          )}
+          <button onClick={handleFinalize} disabled={finalizing || !result.decisionId} className="btn btn-primary" style={{ width: '100%', fontSize: '0.82rem' }}>
+            {finalizing ? <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} /> : `Confirm: ${mode === 'ACCEPT_AI' ? ai.recommendation?.option : selectedOption || '…'}`}
+          </button>
+          {!result.decisionId && <p style={{ fontSize: '0.7rem', color: '#94A3B8', textAlign: 'center', marginTop: '0.35rem' }}>Not saved to DB — finalization unavailable.</p>}
         </div>
       )}
 
-      {/* ── HUMAN DECISION PANEL ── */}
-      <div className="hitl-card" style={{
-        border: '2px solid var(--primary-light)',
-        background: 'linear-gradient(135deg,#F0FDF4,#fff)',
-        padding: '1.25rem',
-      }}>
-        {finalized ? (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-              <ShieldCheck size={18} color="#16A34A" />
-              <span style={{ fontWeight: 700, color: '#166534', fontSize: '0.95rem' }}>Human Decision Recorded</span>
-            </div>
-            <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#166534', marginBottom: '0.25rem' }}>{finalized.option}</div>
-              <div style={{ fontSize: '0.8rem', color: '#16A34A', fontWeight: 600, marginBottom: finalized.reason ? '0.4rem' : 0 }}>
-                {finalized.type === 'ACCEPT_AI' ? '✓ AI Recommendation Accepted'
-                  : finalized.type === 'OVERRIDE_AI' ? '↑ Human Override'
-                  : '⎇ Alternative Chosen'}
-              </div>
-              {finalized.reason && finalized.type !== 'ACCEPT_AI' && (
-                <div style={{ fontSize: '0.8rem', color: '#475569' }}>"{finalized.reason}"</div>
-              )}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.65rem', display: 'flex', justifyContent: 'space-between' }}>
-              <span>AI recommended: <strong>{ai.recommendation?.option}</strong></span>
-              {result.decisionId && (
-                <Link to={`/decisions/${result.decisionId}`} style={{ color: '#16A34A', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  View Full Analysis <ExternalLink size={11} />
-                </Link>
-              )}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-              <UserCheck size={18} color="#16A34A" />
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>Your Decision</span>
-              <span className="badge badge-warning" style={{ marginLeft: 'auto', fontSize: '0.65rem' }}>Action Required</span>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.55 }}>
-              The AI recommendation is advisory. You have the final say.
-            </p>
-
-            {/* Mode selector */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem', marginBottom: '1rem' }}>
-              {[
-                { mode: 'ACCEPT_AI', label: 'Accept AI', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
-                { mode: 'SELECT_ALTERNATIVE', label: 'Alternative', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-                { mode: 'OVERRIDE_AI', label: 'Override', color: '#D97706', bg: '#FFFBEB', border: '#FCD34D' },
-              ].map(tab => (
-                <button
-                  key={tab.mode}
-                  onClick={() => {
-                    setDecisionMode(tab.mode);
-                    if (tab.mode === 'ACCEPT_AI') setSelectedOption(ai.recommendation?.option || '');
-                    else if (tab.mode === 'SELECT_ALTERNATIVE') setSelectedOption(ai.alternatives?.[0]?.option || scores[1]?.name || '');
-                    else setSelectedOption('');
-                  }}
-                  style={{
-                    padding: '0.55rem 0.4rem', fontSize: '0.75rem', fontWeight: 700,
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer', textAlign: 'center',
-                    border: `1px solid ${decisionMode === tab.mode ? tab.border : 'var(--border-subtle)'}`,
-                    background: decisionMode === tab.mode ? tab.bg : 'var(--bg-secondary)',
-                    color: decisionMode === tab.mode ? tab.color : 'var(--text-secondary)',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Accept — just confirm */}
-            {decisionMode === 'ACCEPT_AI' && (
-              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.85rem', fontSize: '0.875rem', color: '#166534' }}>
-                Accept <strong>{ai.recommendation?.option}</strong> as the final decision based on the AI analysis.
-              </div>
-            )}
-
-            {/* Alternative — option selector */}
-            {decisionMode === 'SELECT_ALTERNATIVE' && (
-              <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
-                  Select alternative:
-                </label>
-                <select
-                  className="form-select"
-                  value={selectedOption}
-                  onChange={e => setSelectedOption(e.target.value)}
-                >
-                  {(result.parsedDecision?.options || [])
-                    .filter(o => o.name !== ai.recommendation?.option)
-                    .map(o => <option key={o.name} value={o.name}>{o.name}</option>)}
-                </select>
-              </div>
-            )}
-
-            {/* Override — any option + required reason */}
-            {decisionMode === 'OVERRIDE_AI' && (
-              <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
-                  Select your choice:
-                </label>
-                <select
-                  className="form-select"
-                  value={selectedOption}
-                  onChange={e => setSelectedOption(e.target.value)}
-                  style={{ marginBottom: '0.6rem' }}
-                >
-                  <option value="">-- Select option --</option>
-                  {(result.parsedDecision?.options || []).map(o => (
-                    <option key={o.name} value={o.name}>
-                      {o.name}{o.name === ai.recommendation?.option ? ' (AI Recommended)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
-                  Justification (required):
-                </label>
-                <textarea
-                  className="form-textarea"
-                  rows={2}
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  placeholder="Why are you overriding the AI recommendation?"
-                  style={{ fontSize: '0.85rem' }}
-                />
-              </div>
-            )}
-
-            <button
-              onClick={handleFinalize}
-              disabled={finalizing || !result.decisionId}
-              className="btn btn-primary"
-              style={{ width: '100%' }}
-            >
-              {finalizing ? <><Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving…</> :
-                decisionMode === 'ACCEPT_AI' ? `Confirm: Accept ${ai.recommendation?.option}` :
-                decisionMode === 'SELECT_ALTERNATIVE' ? `Confirm: Choose ${selectedOption || '…'}` :
-                `Confirm: Override → ${selectedOption || '…'}`
-              }
-            </button>
-
-            {!result.decisionId && (
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
-                Decision was not saved to database — finalization unavailable.
-              </p>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* View full analysis link */}
       {result.decisionId && (
-        <Link
-          to={`/decisions/${result.decisionId}`}
-          className="btn btn-secondary"
-          style={{ width: '100%', justifyContent: 'center' }}
-        >
-          <ExternalLink size={14} /> View Full Analysis Page
+        <Link to={`/decisions/${result.decisionId}`} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.82rem' }}>
+          <ExternalLink size={13} /> Open Full Analysis Page
         </Link>
       )}
     </div>
   );
 }
 
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // MAIN PAGE
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 export default function DecisionChat() {
   const navigate = useNavigate();
 
-  // Chat state
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: `Hello! I'm the Decision Intelligence Assistant.\n\nDescribe a decision you need to make — the options you're considering, what matters to you, and any scores or context you have. I'll analyze it using AI and show you a full recommendation with evidence, risks, and alternatives.\n\nYou always make the final call. AI recommends. Humans decide.`,
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState('');
   const [currentResult, setCurrentResult] = useState(null);
   const [currentDecisionId, setCurrentDecisionId] = useState(null);
-  const [error, setError] = useState(null);
-
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Auto-scroll on new messages
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  const showingWelcome = messages.length === 0 && !currentResult;
 
-  const addMessage = (role, content) => {
-    setMessages(prev => [...prev, { role, content }]);
-  };
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+
+  const addMessage = (role, content) => setMessages(prev => [...prev, { role, content }]);
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;
-
     setInput('');
-    setError(null);
-    addMessage('user', text);
 
+    addMessage('user', text);
     setLoading(true);
 
-    // Decide: is this a decision analysis request or a follow-up question?
     const isFollowUp = currentResult !== null && (
       text.length < 120 ||
-      /^(why|what|how|can you|tell me|explain|compare|should i|which|is it|does|what if)/i.test(text.trim())
+      /^(why|what|how|can you|tell me|explain|compare|should|which|is it)/i.test(text)
     );
 
     if (isFollowUp) {
-      // ── Conversational follow-up ──
       setLoadingStage('Thinking…');
       try {
-        const history = messages
-          .filter(m => m.role === 'user' || m.role === 'assistant')
-          .map(m => ({ role: m.role, content: m.content }));
-
+        const history = messages.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({ role: m.role, content: m.content }));
         const res = await chatAPI.sendMessage(text, currentDecisionId, history);
-        if (res.success) {
-          addMessage('assistant', res.reply);
-        } else {
-          addMessage('assistant', 'I had trouble answering that. Could you rephrase?');
-        }
-      } catch (e) {
-        addMessage('assistant', 'Connection error. Please check the backend is running.');
-      }
+        addMessage('assistant', res.success ? res.reply : 'I had trouble answering that. Could you rephrase?');
+      } catch { addMessage('assistant', 'Connection error. Please check the backend.'); }
     } else {
-      // ── Full decision analysis ──
       setLoadingStage('Parsing your decision…');
       try {
-        setTimeout(() => setLoadingStage('Calculating scores…'), 2000);
-        setTimeout(() => setLoadingStage('Asking Groq AI for analysis…'), 4000);
-        setTimeout(() => setLoadingStage('Validating AI output…'), 8000);
+        setTimeout(() => setLoadingStage('Calculating deterministic scores…'), 2500);
+        setTimeout(() => setLoadingStage('Running Groq AI analysis…'), 5000);
+        setTimeout(() => setLoadingStage('Validating AI output…'), 9000);
 
         const res = await chatAPI.analyzeFromChat(text);
-
         if (!res.success) {
-          setError(res.message || 'Analysis failed.');
-          addMessage('assistant', `I couldn't complete the analysis: ${res.message || 'Unknown error.'}\n\n${res.hint || ''}`);
+          addMessage('assistant', `Analysis failed: ${res.message || 'Unknown error.'}\n\n${res.hint || ''}`);
         } else {
           setCurrentResult(res);
           setCurrentDecisionId(res.decisionId);
           const top = res.calculatedScores?.[0];
-          const conf = res.aiAnalysis?.confidence;
           addMessage('assistant',
             `Analysis complete for **${res.parsedDecision?.title}**.\n\n` +
-            `📊 ${res.calculatedScores?.length} options scored.\n` +
             `🏆 Top recommendation: **${top?.name || top?.option}** (${top?.score}/100)\n` +
-            `📈 Confidence: ${conf}% (${res.aiAnalysis?.confidenceCategory})\n\n` +
-            `The full breakdown is shown below. You can ask me follow-up questions, or use the panel to record your final decision.`
+            `📈 Confidence: ${res.aiAnalysis?.confidence}% (${res.aiAnalysis?.confidenceCategory})\n\n` +
+            `The breakdown is on the right. Ask me follow-up questions, or use the panel to record your final decision.`
           );
-          addMessage('system', '↓ Decision analysis results ↓');
+          addMessage('system', '↓ Full analysis shown on the right ↓');
         }
       } catch (e) {
-        const msg = e.response?.data?.message || e.message || 'Unknown error';
-        setError(msg);
-        addMessage('assistant', `Analysis failed: ${msg}\n\nMake sure the backend server is running on port 5000.`);
+        addMessage('assistant', `Analysis failed: ${e.response?.data?.message || e.message}`);
       }
     }
 
@@ -648,235 +419,366 @@ export default function DecisionChat() {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   const handleExample = (ex) => {
-    setInput(ex);
+    setInput(ex.desc + ' ' + ex.title);
     inputRef.current?.focus();
   };
 
   const handleReset = () => {
-    setMessages([{
-      role: 'assistant',
-      content: `Hello! I'm the Decision Intelligence Assistant.\n\nDescribe a decision you need to make — the options you're considering, what matters to you, and any scores or context you have.`,
-    }]);
-    setCurrentResult(null);
-    setCurrentDecisionId(null);
-    setError(null);
-    setInput('');
+    setMessages([]); setCurrentResult(null); setCurrentDecisionId(null); setInput('');
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 5rem)', gap: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
 
-      {/* ── PAGE HEADER ── */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem',
+      {/* ── TOP BAR ── */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0.9rem 1.75rem',
+        background: '#fff',
+        borderBottom: '1px solid #E2E8F0',
+        flexShrink: 0,
+        gap: '1rem',
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.2rem' }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '10px',
-              background: 'var(--primary-gradient)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Sparkles size={17} color="#fff" />
-            </div>
-            <h1 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-              Decision Chat Assistant
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Sparkles size={18} color="#16A34A" />
+            <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+              Decision Intelligence Copilot
             </h1>
           </div>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-            Describe your decision in plain language. AI analyses it. You decide.
+          <p style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.1rem', marginLeft: '1.65rem' }}>
+            Describe your decision. AI structures the problem, evaluates evidence, and explains the trade-offs.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span className="badge badge-advisory">AI Advisory</span>
-          <button onClick={handleReset} className="btn btn-sm btn-secondary">
-            <RefreshCw size={13} /> New Chat
-          </button>
-        </div>
-      </div>
 
-      {/* ── MAIN LAYOUT: Chat left, Results right ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: currentResult ? '1fr 420px' : '1fr',
-        gap: '1.25rem',
-        flex: 1,
-        minHeight: 0,
-        alignItems: 'start',
-      }}>
-
-        {/* ── LEFT: Chat panel ── */}
-        <div style={{
-          display: 'flex', flexDirection: 'column',
-          height: '100%', minHeight: '500px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          overflow: 'hidden',
-          boxShadow: 'var(--shadow-sm)',
-        }}>
-
-          {/* Chat header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* AI Advisory badge */}
           <div style={{
-            padding: '0.85rem 1.15rem',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex', alignItems: 'center', gap: '0.6rem',
-            background: 'var(--bg-secondary)',
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            padding: '0.35rem 0.85rem', borderRadius: '999px',
+            border: '1px solid #BFDBFE', background: '#EFF6FF',
+            fontSize: '0.72rem', fontWeight: 700, color: '#2563EB',
           }}>
-            <div style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              background: '#16A34A', boxShadow: '0 0 0 2px #BBF7D0',
-            }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Decision Intelligence Assistant
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-              Powered by Groq + n8n
-            </span>
+            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#3B82F6' }} />
+            AI ADVISORY
           </div>
 
-          {/* Messages area */}
-          <div style={{
-            flex: 1, overflowY: 'auto',
-            padding: '1.15rem',
-            display: 'flex', flexDirection: 'column', gap: '0.25rem',
-          }}>
-            {messages.map((msg, i) => (
-              <ChatBubble key={i} msg={msg} />
-            ))}
+          {/* New Decision button */}
+          <Link to="/create" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}>
+            <PlusCircle size={14} /> New Decision
+          </Link>
 
-            {/* Loading indicator */}
-            {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0' }}>
+          {/* User avatar */}
+          <div style={{
+            width: '34px', height: '34px', borderRadius: '50%',
+            background: '#166534', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.75rem', fontWeight: 800, flexShrink: 0,
+          }}>
+            JK
+          </div>
+        </div>
+      </header>
+
+      {/* ── BODY ── */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+        {/* ── LEFT: Chat + Welcome area ── */}
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          flex: 1, overflow: 'hidden',
+          background: '#FAFAFA',
+        }}>
+
+          {/* Scrollable content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.75rem' }}>
+
+            {/* WELCOME SCREEN */}
+            {showingWelcome && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                {/* Hero card */}
                 <div style={{
-                  width: '30px', height: '30px', borderRadius: '50%',
-                  background: 'var(--primary-gradient)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
+                  background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 60%, #ECFDF5 100%)',
+                  border: '1px solid #BBF7D0',
+                  borderRadius: '16px',
+                  padding: '1.75rem 2rem',
+                  display: 'flex', alignItems: 'center', gap: '1.75rem',
+                  position: 'relative', overflow: 'hidden',
                 }}>
-                  <Loader2 size={15} color="#fff" style={{ animation: 'spin 0.8s linear infinite' }} />
+                  {/* Decorative leaf */}
+                  <div style={{ position: 'absolute', top: '-30px', right: '200px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(22,163,74,0.07)', pointerEvents: 'none' }} />
+
+                  <RobotIllustration />
+
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+                      How can I help you <span style={{ color: '#16A34A' }}>make a decision?</span>
+                    </h2>
+                    <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6, maxWidth: '440px' }}>
+                      Describe the decision you're facing in plain language.
+                      I'll help structure the options, criteria, evidence and trade-offs.
+                    </p>
+                  </div>
+
+                  {/* Right: AI advisory note */}
+                  <div style={{
+                    background: '#fff', border: '2px solid #16A34A',
+                    borderRadius: '12px', padding: '0.85rem 1rem',
+                    minWidth: '160px', flexShrink: 0,
+                    display: 'flex', flexDirection: 'column', gap: '0.4rem',
+                    alignItems: 'center', textAlign: 'center',
+                  }}>
+                    <div style={{
+                      width: '28px', height: '28px', borderRadius: '50%',
+                      background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <CheckCircle2 size={16} color="#fff" />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>
+                      AI Recommendations are advisory.
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#16A34A', fontWeight: 600 }}>
+                      You make the final decision.
+                    </div>
+                  </div>
                 </div>
+
+                {/* 5-step workflow */}
                 <div style={{
-                  background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-                  borderRadius: '16px 16px 16px 4px', padding: '0.65rem 1rem',
-                  fontSize: '0.875rem', color: 'var(--text-secondary)',
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  background: '#fff', borderRadius: '14px',
+                  border: '1px solid #E2E8F0',
+                  padding: '1.25rem 1.5rem',
                 }}>
-                  <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
-                  {loadingStage || 'Processing…'}
+                  <div style={{ display: 'flex', gap: '0', alignItems: 'stretch', flexWrap: 'wrap' }}>
+                    {WORKFLOW_STEPS.map((step, idx) => (
+                      <React.Fragment key={idx}>
+                        <div style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem',
+                          flex: 1, minWidth: '110px', padding: '0.65rem 0.75rem',
+                          background: step.highlight ? '#F0FDF4' : 'transparent',
+                          borderRadius: step.highlight ? '10px' : 0,
+                          border: step.highlight ? '1px solid #BBF7D0' : 'none',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                              width: '30px', height: '30px', borderRadius: '8px',
+                              background: step.iconBg, color: step.iconColor,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {step.icon}
+                            </div>
+                            <span style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>{idx + 1}</span>
+                          </div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0F172A' }}>{step.title}</div>
+                          <div style={{ fontSize: '0.73rem', color: '#64748B', lineHeight: 1.45 }}>{step.desc}</div>
+                        </div>
+                        {idx < WORKFLOW_STEPS.length - 1 && (
+                          <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.15rem' }}>
+                            <ArrowRight size={14} color="#CBD5E1" />
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Example cards */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ color: '#F59E0B' }}>★</span> Start with an example
+                      </h3>
+                      <p style={{ fontSize: '0.78rem', color: '#64748B' }}>Click on an example to try it. You can also type your own decision.</p>
+                    </div>
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: '#16A34A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      View more examples <ArrowRight size={12} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.85rem' }}>
+                    {EXAMPLES.map((ex, i) => (
+                      <button key={i} onClick={() => handleExample(ex)} style={{
+                        background: ex.color, border: '1px solid #E2E8F0',
+                        borderRadius: '12px', padding: '1rem',
+                        textAlign: 'left', cursor: 'pointer',
+                        transition: 'transform 0.15s, box-shadow 0.15s',
+                        display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+                      >
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: ex.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                          {ex.icon}
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0F172A', lineHeight: 1.35 }}>{ex.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: 1.45 }}>{ex.desc}</div>
+                        <div style={{ alignSelf: 'flex-end', marginTop: 'auto' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ArrowRight size={12} color="#64748B" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
-            <div ref={bottomRef} />
+            {/* CHAT MESSAGES */}
+            {messages.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {messages.map((msg, i) => {
+                  if (msg.role === 'system') {
+                    return (
+                      <div key={i} style={{ textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', color: '#94A3B8', background: '#F1F5F9', padding: '0.2rem 0.85rem', borderRadius: '999px', border: '1px solid #E2E8F0' }}>
+                          {msg.content}
+                        </span>
+                      </div>
+                    );
+                  }
+                  const isUser = msg.role === 'user';
+                  return (
+                    <div key={i} style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', gap: '0.5rem', alignItems: 'flex-end' }}>
+                      {!isUser && (
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#16A34A,#15803D)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Bot size={14} color="#fff" />
+                        </div>
+                      )}
+                      <div style={{
+                        maxWidth: '72%', padding: '0.7rem 1rem',
+                        borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: isUser ? 'linear-gradient(135deg,#16A34A,#15803D)' : '#fff',
+                        color: isUser ? '#fff' : '#0F172A',
+                        border: isUser ? 'none' : '1px solid #E2E8F0',
+                        fontSize: '0.875rem', lineHeight: 1.6,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                        whiteSpace: 'pre-wrap',
+                      }}>
+                        {msg.content}
+                      </div>
+                      {isUser && (
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#166534', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 800, flexShrink: 0 }}>
+                          JK
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {loading && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#16A34A,#15803D)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Loader2 size={14} color="#fff" style={{ animation: 'spin 0.8s linear infinite' }} />
+                    </div>
+                    <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: '16px 16px 16px 4px', padding: '0.6rem 0.9rem', fontSize: '0.82rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="spinner" style={{ width: '13px', height: '13px', borderWidth: '2px' }} />
+                      {loadingStage || 'Processing…'}
+                    </div>
+                  </div>
+                )}
+
+                <div ref={bottomRef} />
+              </div>
+            )}
           </div>
 
-          {/* Example prompts (shown only before first analysis) */}
-          {!currentResult && messages.length <= 2 && (
+          {/* ── INPUT AREA ── */}
+          <div style={{
+            flexShrink: 0, padding: '1rem 1.75rem 1.25rem',
+            background: '#fff',
+            borderTop: '1px solid #E2E8F0',
+          }}>
             <div style={{
-              padding: '0.85rem 1.15rem',
-              borderTop: '1px solid var(--border-subtle)',
-              background: 'var(--bg-secondary)',
-            }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem' }}>
-                Try an example
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                {EXAMPLES.slice(0, 2).map((ex, i) => (
+              border: '1.5px solid #E2E8F0', borderRadius: '14px',
+              background: '#fff', overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              transition: 'border-color 0.18s, box-shadow 0.18s',
+            }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = '#16A34A'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.1)'; }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)'; }}
+            >
+              <textarea
+                ref={inputRef}
+                style={{
+                  width: '100%', minHeight: '72px', maxHeight: '160px', resize: 'none',
+                  border: 'none', outline: 'none', padding: '1rem 1rem 0',
+                  fontFamily: 'var(--font-main)', fontSize: '0.9rem',
+                  color: '#0F172A', background: 'transparent',
+                  lineHeight: 1.6,
+                }}
+                placeholder="Describe your decision, options, criteria, constraints or context…"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                disabled={loading}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem 0.65rem' }}>
+                <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  {[
+                    { icon: <Paperclip size={14} />, label: 'Attach Files' },
+                    { icon: <Globe size={14} />, label: 'Web Search' },
+                  ].map(btn => (
+                    <button key={btn.label} style={{
+                      display: 'flex', alignItems: 'center', gap: '0.35rem',
+                      padding: '0.3rem 0.7rem', border: '1px solid #E2E8F0',
+                      borderRadius: '8px', background: '#F8FAFC',
+                      cursor: 'pointer', fontSize: '0.75rem', color: '#64748B',
+                      fontWeight: 500,
+                    }}>
+                      {btn.icon} {btn.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{input.length}/2000</span>
                   <button
-                    key={i}
-                    onClick={() => handleExample(ex)}
+                    onClick={handleSend}
+                    disabled={loading || !input.trim()}
                     style={{
-                      textAlign: 'left', background: 'var(--bg-card)',
-                      border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
-                      padding: '0.55rem 0.85rem', fontSize: '0.8rem', color: 'var(--text-secondary)',
-                      cursor: 'pointer', lineHeight: 1.4, transition: 'all 0.15s',
+                      width: '36px', height: '36px', borderRadius: '10px',
+                      background: input.trim() ? '#16A34A' : '#E2E8F0',
+                      border: 'none', cursor: input.trim() ? 'pointer' : 'not-allowed',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'background 0.15s',
                     }}
-                    onMouseEnter={e => { e.target.style.borderColor = '#16A34A'; e.target.style.color = 'var(--text-primary)'; }}
-                    onMouseLeave={e => { e.target.style.borderColor = 'var(--border-subtle)'; e.target.style.color = 'var(--text-secondary)'; }}
                   >
-                    <Lightbulb size={12} style={{ display: 'inline', marginRight: '5px', color: '#F59E0B' }} />
-                    {ex.slice(0, 90)}…
+                    <Send size={16} color={input.trim() ? '#fff' : '#94A3B8'} />
                   </button>
-                ))}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Input area */}
-          <div style={{
-            padding: '0.85rem 1.15rem',
-            borderTop: '1px solid var(--border-subtle)',
-            display: 'flex', gap: '0.6rem', alignItems: 'flex-end',
-          }}>
-            <textarea
-              ref={inputRef}
-              className="form-textarea"
-              style={{
-                flex: 1, minHeight: '48px', maxHeight: '120px',
-                resize: 'none', fontSize: '0.9rem', lineHeight: 1.5,
-                borderRadius: 'var(--radius-md)',
-              }}
-              placeholder={currentResult
-                ? 'Ask a follow-up question about this decision…'
-                : 'Describe your decision: options, criteria, context…'
-              }
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
-            <button
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              className="btn btn-primary"
-              style={{ height: '48px', width: '48px', padding: 0, borderRadius: 'var(--radius-md)', flexShrink: 0 }}
-            >
-              {loading
-                ? <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} />
-                : <Send size={18} />
-              }
-            </button>
+            {/* Disclaimer */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.65rem', fontSize: '0.72rem', color: '#64748B' }}>
+              <Info size={12} color="#16A34A" style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>AI recommendations are advisory. Scores are calculated deterministically via the scoring engine, not invented by the AI. The final decision is always yours.</span>
+            </div>
           </div>
         </div>
 
         {/* ── RIGHT: Decision result panel ── */}
         {currentResult && (
           <div style={{
+            width: '360px', flexShrink: 0,
+            borderLeft: '1px solid #E2E8F0',
+            background: '#fff',
             overflowY: 'auto',
-            maxHeight: 'calc(100vh - 10rem)',
-            display: 'flex', flexDirection: 'column', gap: '0.75rem',
+            padding: '1.25rem',
           }}>
-            <DecisionResultPanel
-              result={currentResult}
-              onViewFull={() => navigate(`/decisions/${currentResult.decisionId}`)}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A' }}>Analysis Results</h3>
+              <button onClick={handleReset} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <RefreshCw size={11} /> New
+              </button>
+            </div>
+            <DecisionResultPanel result={currentResult} />
           </div>
         )}
-      </div>
-
-      {/* Advisory footer */}
-      <div style={{
-        marginTop: '0.85rem',
-        padding: '0.6rem 1rem',
-        background: 'var(--primary-very-light)',
-        border: '1px solid var(--primary-light)',
-        borderRadius: 'var(--radius-md)',
-        display: 'flex', alignItems: 'center', gap: '0.6rem',
-        fontSize: '0.78rem', color: 'var(--primary-dark)',
-      }}>
-        <Info size={13} />
-        AI recommendations are advisory. Scores are calculated deterministically via the scoring engine, not invented by the AI.
-        The final decision is always yours.
       </div>
     </div>
   );

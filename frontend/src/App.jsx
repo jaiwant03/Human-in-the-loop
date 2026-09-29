@@ -1,7 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import CreateDecision from './pages/CreateDecision';
 import DecisionAnalysis from './pages/DecisionAnalysis';
@@ -21,17 +20,27 @@ export default function App() {
         <Sidebar />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create" element={<CreateDecision />} />
+            {/* Default → Chat (the "Decision Intelligence Copilot" screen) */}
+            <Route path="/" element={<Navigate to="/chat" replace />} />
             <Route path="/chat" element={<DecisionChat />} />
-            <Route path="/decisions/:id" element={<DecisionAnalysis />} />
-            <Route path="/decisions/:id/details" element={<DecisionDetails />} />
-            <Route path="/decisions/:id/simulate" element={<WhatIfSimulator />} />
-            <Route path="/history" element={<DecisionHistory />} />
+            <Route path="/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
+            <Route path="/create" element={<PageWrapper><CreateDecision /></PageWrapper>} />
+            <Route path="/decisions/:id" element={<PageWrapper><DecisionAnalysis /></PageWrapper>} />
+            <Route path="/decisions/:id/details" element={<PageWrapper><DecisionDetails /></PageWrapper>} />
+            <Route path="/decisions/:id/simulate" element={<PageWrapper><WhatIfSimulator /></PageWrapper>} />
+            <Route path="/history" element={<PageWrapper><DecisionHistory /></PageWrapper>} />
           </Routes>
         </main>
       </div>
     </Router>
+  );
+}
+
+// Wrapper that adds padding for pages that don't have their own topbar
+function PageWrapper({ children }) {
+  return (
+    <div style={{ padding: '2rem 2.5rem 4rem', minHeight: '100vh' }}>
+      {children}
+    </div>
   );
 }
