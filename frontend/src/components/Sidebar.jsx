@@ -1,119 +1,159 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  PlusCircle, 
-  History, 
-  HelpCircle, 
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  ShieldCheck,
+  LayoutDashboard,
+  PlusCircle,
+  History,
   Sparkles,
-  ShieldAlert,
-  SlidersHorizontal,
-  Compass
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Brain,
+  GitFork,
+  BarChart3,
+  BookOpen
 } from 'lucide-react';
+import { decisionAPI } from '../services/api';
 
 export default function Sidebar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+
+  const isActive = (path) => location.pathname === path;
+
+  const handleLoadDemo = async () => {
+    try {
+      setSeeding(true);
+      const res = await decisionAPI.seedDemo();
+      if (res.data?._id) {
+        navigate(`/decisions/${res.data._id}`);
+      } else {
+        navigate('/dashboard');
+      }
+    } catch {
+      navigate('/dashboard');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const navItems = [
+    { path: '/', icon: <Home size={20} />, label: 'Home' },
+    { path: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+    { path: '/create', icon: <PlusCircle size={20} />, label: 'New Decision' },
+    { path: '/history', icon: <History size={20} />, label: 'Audit Trail' },
+  ];
+
   return (
-    <aside style={{
-      width: '240px',
-      background: 'rgba(15, 23, 42, 0.4)',
-      borderRight: '1px solid var(--border-subtle)',
-      padding: '1.5rem 1rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '2rem',
-    }}>
-      <div>
-        <div style={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          padding: '0 0.75rem',
-          marginBottom: '0.75rem',
-        }}>
-          Decision Engine
+    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
+      {/* Brand */}
+      <div className="sidebar__brand">
+        <div className="sidebar__logo">
+          <ShieldCheck size={22} color="#fff" />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <NavLink
-            to="/dashboard"
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.65rem 0.85rem',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-              color: isActive ? '#ffffff' : 'var(--text-secondary)',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              border: isActive ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
-            })}
-          >
-            <LayoutDashboard size={18} />
-            Dashboard
-          </NavLink>
-
-          <NavLink
-            to="/create"
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.65rem 0.85rem',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-              color: isActive ? '#ffffff' : 'var(--text-secondary)',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              border: isActive ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
-            })}
-          >
-            <PlusCircle size={18} />
-            New Decision
-          </NavLink>
-
-          <NavLink
-            to="/history"
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.65rem 0.85rem',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textDecoration: 'none',
-              color: isActive ? '#ffffff' : 'var(--text-secondary)',
-              background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-              border: isActive ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent',
-            })}
-          >
-            <History size={18} />
-            Audit History
-          </NavLink>
-        </div>
+        {!collapsed && (
+          <div className="sidebar__brand-text">
+            <span className="sidebar__brand-name">HITL</span>
+            <span className="sidebar__brand-sub">Decision Intelligence</span>
+          </div>
+        )}
+        <button
+          className="sidebar__collapse-btn"
+          onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
 
-      {/* HITL Principle Badge Card */}
-      <div style={{
-        marginTop: 'auto',
-        background: 'rgba(99, 102, 241, 0.08)',
-        border: '1px solid rgba(99, 102, 241, 0.25)',
-        borderRadius: 'var(--radius-md)',
-        padding: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-          <ShieldAlert size={16} color="#a5b4fc" />
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#c7d2fe', textTransform: 'uppercase' }}>
-            Core Principle
-          </span>
+      {/* Philosophy badge */}
+      {!collapsed && (
+        <div className="sidebar__tagline">
+          <Brain size={12} />
+          <span>AI Recommends · Humans Decide</span>
         </div>
-        <p style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.4 }}>
-          AI recommends with mathematical evidence. <strong>Human preserves 100% final authority.</strong>
-        </p>
+      )}
+
+      <div className="sidebar__divider" />
+
+      {/* Main Nav */}
+      <nav className="sidebar__nav">
+        {!collapsed && (
+          <span className="sidebar__section-label">Navigation</span>
+        )}
+
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`sidebar__nav-item ${isActive(item.path) ? 'sidebar__nav-item--active' : ''}`}
+            title={collapsed ? item.label : ''}
+          >
+            <span className="sidebar__nav-icon">{item.icon}</span>
+            {!collapsed && <span className="sidebar__nav-label">{item.label}</span>}
+            {isActive(item.path) && !collapsed && (
+              <span className="sidebar__active-dot" />
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="sidebar__divider" />
+
+      {/* Quick Actions */}
+      <div className="sidebar__nav">
+        {!collapsed && (
+          <span className="sidebar__section-label">Quick Actions</span>
+        )}
+
+        <Link
+          to="/create"
+          className="sidebar__nav-item sidebar__nav-item--create"
+          title={collapsed ? 'New Decision' : ''}
+        >
+          <span className="sidebar__nav-icon"><PlusCircle size={20} /></span>
+          {!collapsed && <span className="sidebar__nav-label">Create Decision</span>}
+        </Link>
+
+        <button
+          onClick={handleLoadDemo}
+          disabled={seeding}
+          className="sidebar__nav-item sidebar__nav-item--demo"
+          title={collapsed ? 'Supplier Demo' : ''}
+        >
+          <span className="sidebar__nav-icon">
+            <Sparkles size={20} />
+          </span>
+          {!collapsed && (
+            <span className="sidebar__nav-label">
+              {seeding ? 'Loading...' : 'Supplier Demo'}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Bottom section */}
+      <div className="sidebar__bottom">
+        <div className="sidebar__divider" />
+        {!collapsed && (
+          <div className="sidebar__philosophy">
+            <div className="sidebar__philosophy-flow">
+              <span>AI</span>
+              <span className="sidebar__arrow">→</span>
+              <span>Evidence</span>
+              <span className="sidebar__arrow">→</span>
+              <span className="sidebar__philosophy-human">Human</span>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem 0' }}>
+            <ShieldCheck size={20} color="var(--primary)" />
+          </div>
+        )}
       </div>
     </aside>
   );

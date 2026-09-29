@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import CreateDecision from './pages/CreateDecision';
@@ -16,8 +16,8 @@ import './styles/decision.css';
 export default function App() {
   return (
     <Router>
-      <div className="app-container">
-        <Navbar />
+      <div className="app-shell">
+        <Sidebar />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Landing />} />
