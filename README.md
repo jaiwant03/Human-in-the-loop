@@ -187,6 +187,8 @@ Import `n8n/Decision_Intelligence_Workflow.json` into your n8n instance:
 
 ## Installation & Setup
 
+**🚀 For a quick 5-minute setup, see [QUICK_START.md](QUICK_START.md)**
+
 ### Prerequisites
 
 - Node.js 18+
