@@ -1,269 +1,163 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  BarChart2, 
-  PieChart, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Gauge, 
-  UserCheck, 
-  PlusCircle, 
-  Sparkles, 
-  ArrowRight,
-  Clock,
-  Layers,
-  Search,
-  Filter
+import {
+  Layers, CheckCircle2, AlertTriangle, Gauge, GitFork,
+  ArrowRight, PlusCircle, Sparkles, RefreshCw, Bot, UserCheck
 } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  ArcElement, CategoryScale, LinearScale, BarElement,
+  Title, Tooltip, Legend
+} from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { dashboardAPI, decisionAPI } from '../services/api';
 
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 export default function Dashboard() {
-  const [statsData, setStatsData] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [seeding, setSeeding] = useState(false);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const loadDashboardData = async () => {
+  const load = async () => {
     try {
-      setLoading(true);
+      setLoading(true); setError(null);
       const res = await dashboardAPI.getStats();
-      if (res.success) {
-        setStatsData(res.data);
-      }
-    } catch (err) {
-      console.error('Failed to load dashboard:', err);
-      setError('Unable to load analytics. Ensure the backend server is running.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSeedDemo = async () => {
-    try {
-      await decisionAPI.seedDemo();
-      await loadDashboardData();
+      if (res.success) setStats(res.data);
     } catch (e) {
-      console.error(e);
-    }
+      setError('Cannot reach backend. Make sure the server is running on port 5000.');
+    } finally { setLoading(false); }
   };
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '5rem 0' }}>
-        <div className="spinner" style={{ width: '36px', height: '36px', borderWidth: '3px' }} />
-        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Aggregating decision intelligence metrics...</p>
-      </div>
-    );
-  }
-
-  const summary = statsData?.summary || {
-    totalDecisions: 0,
-    aiAccepted: 0,
-    humanOverrides: 0,
-    alternativeSelected: 0,
-    averageConfidence: 85,
-    humanOverridePercent: 0,
-    aiAcceptancePercent: 0,
+  const handleSeed = async () => {
+    try {
+      setSeeding(true);
+      await decisionAPI.seedDemo();
+      await load();
+    } catch { /* ignore */ } finally { setSeeding(false); }
   };
 
-  const charts = statsData?.charts || {};
-  const recentDecisions = statsData?.recentDecisions || [];
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="spinner" style={{ width: 36, height: 36 }} />
+      <p>Loading dashboard metrics…</p>
+    </div>
+  );
 
-  // Doughnut Chart for Outcomes
+  const sum = stats?.summary || {};
+  const charts = stats?.charts || {};
+  const recent = stats?.recentDecisions || [];
+
+  /* ── Chart data ── */
   const outcomeData = {
-    labels: ['AI Accepted', 'Human Override', 'Alternative Chosen', 'Awaiting Review'],
-    datasets: [
-      {
-        data: [
-          charts.outcomes?.ACCEPT_AI || 0,
-          charts.outcomes?.OVERRIDE_AI || 0,
-          charts.outcomes?.SELECT_ALTERNATIVE || 0,
-          charts.outcomes?.AWAITING_DECISION || 0,
-        ],
-        backgroundColor: [
-          '#10b981', // green
-          '#ef4444', // red
-          '#8b5cf6', // purple
-          '#f59e0b', // amber
-        ],
-        borderColor: '#131b2e',
-        borderWidth: 2,
-      },
-    ],
+    labels: ['AI Accepted', 'Human Override', 'Alternative', 'Pending'],
+    datasets: [{
+      data: [
+        charts.outcomes?.ACCEPT_AI || 0,
+        charts.outcomes?.OVERRIDE_AI || 0,
+        charts.outcomes?.SELECT_ALTERNATIVE || 0,
+        charts.outcomes?.AWAITING_DECISION || 0,
+      ],
+      backgroundColor: ['#16A34A', '#EF4444', '#7C3AED', '#F59E0B'],
+      borderColor: '#fff',
+      borderWidth: 3,
+    }],
   };
 
   const outcomeOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } },
-      },
-      tooltip: {
-        backgroundColor: '#0f172a',
-        titleColor: '#fff',
-      },
+      legend: { position: 'bottom', labels: { color: '#475569', font: { family: 'Plus Jakarta Sans', size: 11 }, boxWidth: 12, padding: 12 } },
+      tooltip: { backgroundColor: '#0F172A', titleColor: '#fff', bodyColor: '#94A3B8' },
     },
-    cutout: '70%',
+    cutout: '68%',
   };
 
-  // Confidence Distribution Bar Chart
-  const confidenceData = {
-    labels: ['High (80-100%)', 'Medium (60-79%)', 'Low (<60%)'],
-    datasets: [
-      {
-        label: 'Decisions',
-        data: [
-          charts.confidenceDistribution?.High || 0,
-          charts.confidenceDistribution?.Medium || 0,
-          charts.confidenceDistribution?.Low || 0,
-        ],
-        backgroundColor: [
-          'rgba(16, 185, 129, 0.75)',
-          'rgba(245, 158, 11, 0.75)',
-          'rgba(239, 68, 68, 0.75)',
-        ],
-        borderColor: ['#10b981', '#f59e0b', '#ef4444'],
-        borderWidth: 1,
-        borderRadius: 6,
-      },
-    ],
+  const confData = {
+    labels: ['High (≥80%)', 'Medium (60–79%)', 'Low (<60%)'],
+    datasets: [{
+      label: 'Decisions',
+      data: [charts.confidenceDistribution?.High || 0, charts.confidenceDistribution?.Medium || 0, charts.confidenceDistribution?.Low || 0],
+      backgroundColor: ['rgba(22,163,74,0.8)', 'rgba(245,158,11,0.8)', 'rgba(239,68,68,0.8)'],
+      borderColor: ['#16A34A', '#F59E0B', '#EF4444'],
+      borderWidth: 1,
+      borderRadius: 6,
+    }],
   };
 
-  const confidenceOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+  const confOptions = {
+    responsive: true, maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
+      tooltip: { backgroundColor: '#0F172A', titleColor: '#fff', bodyColor: '#94A3B8' },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { stepSize: 1, color: '#94a3b8' },
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-      },
-      x: {
-        ticks: { color: '#94a3b8' },
-        grid: { display: false },
-      },
+      y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94A3B8', font: { family: 'Plus Jakarta Sans' } }, grid: { color: '#F1F5F9' } },
+      x: { ticks: { color: '#475569', font: { family: 'Plus Jakarta Sans' } }, grid: { display: false } },
     },
   };
+
+  const statCards = [
+    { label: 'Total Decisions', value: sum.totalDecisions ?? 0, icon: <Layers size={18} color="#16A34A" />, cls: '' },
+    { label: 'AI Accepted', value: sum.aiAccepted ?? 0, icon: <CheckCircle2 size={18} color="#10B981" />, cls: 'stat-success', sub: `${sum.aiAcceptancePercent ?? 0}% acceptance rate` },
+    { label: 'Human Overrides', value: sum.humanOverrides ?? 0, icon: <AlertTriangle size={18} color="#F59E0B" />, cls: 'stat-warning', sub: `${sum.humanOverridePercent ?? 0}% override rate` },
+    { label: 'Avg Confidence', value: `${sum.averageConfidence ?? 85}%`, icon: <Gauge size={18} color="#14B8A6" />, cls: 'stat-teal' },
+    { label: 'Alternatives Chosen', value: sum.alternativeSelected ?? 0, icon: <GitFork size={18} color="#7C3AED" />, cls: 'stat-purple' },
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
       {/* Header */}
       <div className="dashboard-header">
         <div className="dashboard-title-group">
           <h1>Decision Intelligence Dashboard</h1>
-          <p>
-            Real-time analytics on AI advisory acceptance, human overrides, and confidence distribution.
-          </p>
+          <p>Real-time analytics on AI advisory outputs, human override rates and confidence distribution.</p>
         </div>
-
         <div className="dashboard-actions">
-          <button onClick={handleSeedDemo} className="btn btn-secondary">
-            <Sparkles size={16} color="#a5b4fc" />
-            Seed Demo Supplier
+          <button onClick={handleSeed} disabled={seeding} className="btn btn-secondary">
+            <Sparkles size={15} color="#16A34A" />
+            {seeding ? 'Loading…' : 'Seed Demo'}
+          </button>
+          <button onClick={load} className="btn btn-secondary">
+            <RefreshCw size={15} /> Refresh
           </button>
           <Link to="/create" className="btn btn-primary">
-            <PlusCircle size={16} />
-            Create Decision
+            <PlusCircle size={15} /> New Decision
           </Link>
         </div>
       </div>
 
       {error && (
         <div className="alert-banner alert-warning">
-          <AlertTriangle size={18} />
-          <span>{error}</span>
+          <AlertTriangle size={18} /> {error}
         </div>
       )}
 
-      {/* Stats Cards Row */}
+      {/* Stats Grid */}
       <div className="stats-grid">
-        {/* Total Decisions */}
-        <div className="hitl-card stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Total Decisions</span>
-            <div className="stat-icon-wrapper">
-              <Layers size={18} color="#a5b4fc" />
+        {statCards.map((c) => (
+          <div key={c.label} className={`hitl-card stat-card ${c.cls}`}>
+            <div className="stat-header">
+              <span className="stat-label">{c.label}</span>
+              <div className="stat-icon-wrapper">{c.icon}</div>
             </div>
+            <div className="stat-value">{c.value}</div>
+            {c.sub && <div className="stat-meta">{c.sub}</div>}
           </div>
-          <div className="stat-value">{summary.totalDecisions}</div>
-          <div className="stat-meta">
-            Across enterprise multi-criteria evaluations
-          </div>
-        </div>
-
-        {/* AI Accepted */}
-        <div className="hitl-card stat-card stat-success">
-          <div className="stat-header">
-            <span className="stat-label">AI Accepted</span>
-            <div className="stat-icon-wrapper">
-              <CheckCircle2 size={18} color="#10b981" />
-            </div>
-          </div>
-          <div className="stat-value">{summary.aiAccepted}</div>
-          <div className="stat-meta">
-            <span style={{ color: '#6ee7b7', fontWeight: 700 }}>{summary.aiAcceptancePercent}%</span> of finalized cases
-          </div>
-        </div>
-
-        {/* Human Overrides */}
-        <div className="hitl-card stat-card stat-warning">
-          <div className="stat-header">
-            <span className="stat-label">Human Overrides</span>
-            <div className="stat-icon-wrapper">
-              <AlertTriangle size={18} color="#f59e0b" />
-            </div>
-          </div>
-          <div className="stat-value">{summary.humanOverrides}</div>
-          <div className="stat-meta">
-            <span style={{ color: '#fde68a', fontWeight: 700 }}>{summary.humanOverridePercent}%</span> human intervention rate
-          </div>
-        </div>
-
-        {/* Average Confidence */}
-        <div className="hitl-card stat-card stat-cyan">
-          <div className="stat-header">
-            <span className="stat-label">Avg Confidence</span>
-            <div className="stat-icon-wrapper">
-              <Gauge size={18} color="#06b6d4" />
-            </div>
-          </div>
-          <div className="stat-value">{summary.averageConfidence}%</div>
-          <div className="stat-meta">
-            Analytical mathematical certainty
-          </div>
-        </div>
-
-        {/* Alternative Selections */}
-        <div className="hitl-card stat-card stat-purple">
-          <div className="stat-header">
-            <span className="stat-label">Alternatives Picked</span>
-            <div className="stat-icon-wrapper">
-              <UserCheck size={18} color="#8b5cf6" />
-            </div>
-          </div>
-          <div className="stat-value">{summary.alternativeSelected}</div>
-          <div className="stat-meta">
-            Secondary candidates ratified
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Visualizations Grid */}
+      {/* Charts */}
       <div className="charts-grid">
         <div className="hitl-card">
           <div className="chart-card-header">
             <div>
-              <h3 style={{ fontSize: '1.1rem' }}>Decision Outcome Distribution</h3>
-              <p style={{ fontSize: '0.8rem' }}>AI Accepted vs Human Override vs Alternative vs Pending</p>
+              <h3>Decision Outcome Distribution</h3>
+              <p>AI Accepted vs Override vs Alternative vs Pending</p>
             </div>
           </div>
           <div className="chart-container">
@@ -274,86 +168,78 @@ export default function Dashboard() {
         <div className="hitl-card">
           <div className="chart-card-header">
             <div>
-              <h3 style={{ fontSize: '1.1rem' }}>AI Confidence Distribution</h3>
-              <p style={{ fontSize: '0.8rem' }}>Distribution of mathematical confidence ratings</p>
+              <h3>Confidence Distribution</h3>
+              <p>Number of decisions per confidence tier</p>
             </div>
           </div>
           <div className="chart-container">
-            <Bar data={confidenceData} options={confidenceOptions} />
+            <Bar data={confData} options={confOptions} />
           </div>
         </div>
       </div>
 
-      {/* Recent Decisions Table */}
+      {/* Recent Decisions */}
       <div className="hitl-card">
         <div className="recent-section-header">
           <div>
-            <h3 style={{ fontSize: '1.2rem' }}>Recent Decision Pipeline</h3>
-            <p style={{ fontSize: '0.85rem' }}>Active and finalized decision-support scenarios</p>
+            <h3>Recent Decision Pipeline</h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Latest AI advisory + human outcomes</p>
           </div>
           <Link to="/history" className="btn btn-sm btn-secondary">
-            View All History <ArrowRight size={14} />
+            View All <ArrowRight size={13} />
           </Link>
         </div>
 
-        {recentDecisions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
-            No decisions logged yet. Click "Seed Demo Supplier" or "Create Decision" to begin.
+        {recent.length === 0 ? (
+          <div className="empty-state">
+            <Layers size={36} />
+            <h3>No decisions yet</h3>
+            <p>Click "Seed Demo" or "New Decision" to get started.</p>
           </div>
         ) : (
           <div className="decisions-table-container">
             <table className="decisions-table">
               <thead>
                 <tr>
-                  <th>Decision Title</th>
+                  <th>Decision</th>
                   <th>Category</th>
                   <th>AI Recommendation</th>
                   <th>Confidence</th>
                   <th>Human Decision</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {recentDecisions.map((d) => (
+                {recent.map((d) => (
                   <tr key={d._id}>
                     <td className="decision-title-cell">
                       <Link to={`/decisions/${d._id}`}>{d.title}</Link>
                     </td>
+                    <td><span className="badge badge-gray">{d.category}</span></td>
                     <td>
-                      <span className="badge badge-gray">{d.category}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, color: '#166534' }}>
+                        <Bot size={13} color="#16A34A" />{d.aiRecommendation}
+                      </span>
                     </td>
                     <td>
-                      <strong style={{ color: '#cbd5e1' }}>{d.aiRecommendation}</strong>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: '#a5b4fc', fontWeight: 600 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: d.confidence >= 80 ? '#16A34A' : d.confidence >= 60 ? '#D97706' : '#DC2626', fontSize: '0.875rem' }}>
                         {d.confidence}%
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontWeight: 600, color: d.humanDecision !== 'Pending Review' ? '#ffffff' : 'var(--text-muted)' }}>
+                      <span style={{ fontWeight: 600, color: d.humanDecision !== 'Pending Review' ? '#0F172A' : '#94A3B8' }}>
                         {d.humanDecision}
                       </span>
                     </td>
                     <td>
-                      {d.decisionType === 'ACCEPT_AI' && (
-                        <span className="badge badge-success">AI Accepted</span>
-                      )}
-                      {d.decisionType === 'OVERRIDE_AI' && (
-                        <span className="badge badge-danger">Human Override</span>
-                      )}
-                      {d.decisionType === 'SELECT_ALTERNATIVE' && (
-                        <span className="badge badge-purple">Alternative</span>
-                      )}
-                      {d.decisionType === 'AWAITING_REVIEW' && (
-                        <span className="badge badge-warning">Awaiting Review</span>
-                      )}
+                      {d.decisionType === 'ACCEPT_AI' && <span className="badge badge-success">AI Accepted</span>}
+                      {d.decisionType === 'OVERRIDE_AI' && <span className="badge badge-danger">Override</span>}
+                      {d.decisionType === 'SELECT_ALTERNATIVE' && <span className="badge badge-purple">Alternative</span>}
+                      {(d.decisionType === 'AWAITING_REVIEW' || !d.decisionType) && <span className="badge badge-warning">Pending</span>}
                     </td>
                     <td>
-                      <Link to={`/decisions/${d._id}`} className="btn btn-sm btn-secondary">
-                        Inspect
-                      </Link>
+                      <Link to={`/decisions/${d._id}`} className="btn btn-sm btn-secondary">View</Link>
                     </td>
                   </tr>
                 ))}
@@ -361,6 +247,30 @@ export default function Dashboard() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* HITL principle banner */}
+      <div style={{
+        background: 'var(--primary-very-light)',
+        border: '1px solid var(--primary-light)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '1.25rem 1.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        flexWrap: 'wrap',
+      }}>
+        <UserCheck size={22} color="#16A34A" style={{ flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, color: '#166534', fontSize: '0.95rem', marginBottom: '0.15rem' }}>
+            Human-in-the-Loop Principle
+          </div>
+          <div style={{ fontSize: '0.82rem', color: '#475569' }}>
+            The AI recommendation is <strong>never</strong> automatically saved as the final decision.
+            Every outcome in this dashboard reflects an explicit human choice.
+          </div>
+        </div>
+        <Link to="/create" className="btn btn-sm btn-primary">Create Decision</Link>
       </div>
     </div>
   );

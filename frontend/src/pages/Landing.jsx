@@ -1,17 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  Bot, 
-  UserCheck, 
-  ArrowRight, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle, 
-  FileText, 
-  Sliders, 
-  Database,
-  Workflow
+import {
+  ArrowRight, ShieldCheck, Bot, UserCheck, BarChart3,
+  Sliders, Database, CheckCircle2, Sparkles, Brain,
+  GitFork, TrendingUp
 } from 'lucide-react';
 import { decisionAPI } from '../services/api';
 
@@ -21,260 +13,322 @@ export default function Landing() {
   const handleLaunchDemo = async () => {
     try {
       const res = await decisionAPI.seedDemo();
-      if (res.data?._id) {
-        navigate(`/decisions/${res.data._id}`);
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (e) {
+      if (res.data?._id) navigate(`/decisions/${res.data._id}`);
+      else navigate('/dashboard');
+    } catch {
       navigate('/dashboard');
     }
   };
 
+  const steps = [
+    { icon: <Brain size={18} />, label: 'Define Decision', color: '#16A34A' },
+    { icon: <Sliders size={18} />, label: 'Set Criteria & Weights', color: '#14B8A6' },
+    { icon: <BarChart3 size={18} />, label: 'System Scores Options', color: '#3B82F6' },
+    { icon: <Bot size={18} />, label: 'AI Explains Results', color: '#7C3AED' },
+    { icon: <UserCheck size={18} />, label: 'Human Decides', color: '#16A34A' },
+    { icon: <Database size={18} />, label: 'Audit Trail Saved', color: '#F59E0B' },
+  ];
+
+  const features = [
+    {
+      icon: <Bot size={22} />,
+      bg: '#F0FDF4',
+      iconColor: '#16A34A',
+      title: 'Deterministic Scoring',
+      desc: 'Weighted multi-criteria algorithm calculates objective scores before the AI sees them. No hallucinated numbers.',
+    },
+    {
+      icon: <UserCheck size={22} />,
+      bg: '#D1FAE5',
+      iconColor: '#059669',
+      title: 'Human Final Authority',
+      desc: 'Accept the AI recommendation, choose an alternative, or override entirely. The AI never makes the final call.',
+    },
+    {
+      icon: <Sliders size={22} />,
+      bg: '#FEF3C7',
+      iconColor: '#D97706',
+      title: 'What-If Simulator',
+      desc: 'Adjust criteria weights and see rankings shift in real time — without touching the original decision.',
+    },
+    {
+      icon: <GitFork size={22} />,
+      bg: '#EDE9FE',
+      iconColor: '#7C3AED',
+      title: 'n8n + Groq AI',
+      desc: 'Groq AI accessed exclusively through n8n workflow nodes. API key never exposed to the frontend.',
+    },
+    {
+      icon: <TrendingUp size={22} />,
+      bg: '#DBEAFE',
+      iconColor: '#2563EB',
+      title: 'Analytical Confidence',
+      desc: 'Confidence calculated from data completeness, score separation, and criteria coverage — not LLM guesswork.',
+    },
+    {
+      icon: <Database size={22} />,
+      bg: '#FEE2E2',
+      iconColor: '#DC2626',
+      title: 'Immutable Audit Trail',
+      desc: 'Every AI recommendation and human decision stored separately in MongoDB with full timestamps and reasons.',
+    },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem', paddingBottom: '3rem' }}>
-      {/* Hero Section */}
-      <section style={{ textAlign: 'center', maxWidth: '900px', margin: '2rem auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-        <div className="badge badge-green" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', gap: '0.5rem' }}>
-          <Sparkles size={14} color="#16A34A" />
-          <span>Next-Generation Decision Support System</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem', paddingBottom: '3rem' }}>
+
+      {/* ── HERO ── */}
+      <section style={{
+        background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 50%, #ECFDF5 100%)',
+        border: '1px solid #BBF7D0',
+        borderRadius: '20px',
+        padding: '3.5rem 3rem',
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* decorative */}
+        <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(22,163,74,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(22,163,74,0.04)', pointerEvents: 'none' }} />
+
+        <div className="badge badge-green" style={{ marginBottom: '1.25rem' }}>
+          <ShieldCheck size={13} /> Human-in-the-Loop AI Platform
         </div>
 
-        <h1 style={{ fontSize: '3.4rem', lineHeight: 1.15, fontWeight: 800, color: 'var(--text-primary)' }}>
-          Human-in-the-Loop <br />
+        <h1 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 800, color: '#0F172A', marginBottom: '1rem', lineHeight: 1.15 }}>
+          Human-in-the-Loop<br />
           <span className="gradient-text">Decision Intelligence</span>
         </h1>
 
-        <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '720px', lineHeight: 1.6 }}>
-          AI-powered recommendations. <strong style={{ color: 'var(--primary-dark)' }}>Human-controlled decisions.</strong>
-          <br />
-          Deterministic mathematics calculate rankings. Groq AI synthesizes evidence. You hold absolute final authority.
+        <p style={{ fontSize: '1.1rem', color: '#475569', maxWidth: '640px', margin: '0 auto 2rem', lineHeight: 1.7 }}>
+          AI-powered recommendations with transparent evidence, confidence, and alternatives —
+          while keeping the <strong style={{ color: '#166534' }}>final decision in human hands</strong>.
         </p>
 
-        {/* Philosophy Flow Bar */}
+        {/* Flow bar */}
         <div style={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '0.5rem',
           flexWrap: 'wrap',
           justifyContent: 'center',
-          background: 'var(--bg-card)',
-          padding: '0.75rem 1.5rem',
-          borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--border-light)',
-          fontSize: '0.85rem',
+          background: '#fff',
+          padding: '0.65rem 1.5rem',
+          borderRadius: '999px',
+          border: '1px solid #D1FAE5',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          fontSize: '0.82rem',
           fontWeight: 600,
-          color: 'var(--text-secondary)',
-          margin: '0.5rem 0 1rem',
-          boxShadow: 'var(--shadow-sm)',
+          color: '#475569',
+          marginBottom: '2rem',
         }}>
           <span>AI Recommends</span>
-          <ArrowRight size={14} color="#16A34A" />
+          <ArrowRight size={13} color="#16A34A" />
           <span>AI Explains</span>
-          <ArrowRight size={14} color="#16A34A" />
+          <ArrowRight size={13} color="#16A34A" />
           <span style={{ color: '#14B8A6' }}>Human Evaluates</span>
-          <ArrowRight size={14} color="#10b981" />
-          <span style={{ color: '#10B981' }}>Human Decides</span>
-          <ArrowRight size={14} color="#7C3AED" />
-          <span style={{ color: '#7C3AED' }}>System Records</span>
+          <ArrowRight size={13} color="#16A34A" />
+          <span style={{ color: '#16A34A', fontWeight: 700 }}>Human Decides</span>
+          <ArrowRight size={13} color="#F59E0B" />
+          <span style={{ color: '#D97706' }}>System Records</span>
         </div>
 
-        {/* Action CTAs */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/create" className="btn btn-lg btn-primary">
-            Create New Decision <ArrowRight size={18} />
+            <Brain size={18} /> Create a Decision
           </Link>
-
           <button onClick={handleLaunchDemo} className="btn btn-lg btn-secondary">
-            <Sparkles size={18} color="#16A34A" />
-            Explore Supplier Demo
+            <Sparkles size={18} color="#16A34A" /> Explore Supplier Demo
           </button>
-
           <Link to="/dashboard" className="btn btn-lg btn-secondary">
-            View Analytics Dashboard
+            <BarChart3 size={18} /> View Dashboard
           </Link>
         </div>
       </section>
 
-      {/* Interactive Architecture Pillars */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: 'var(--primary-very-light)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <Bot size={22} color="var(--primary)" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Deterministic Grounding</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            No hallucinations. All scores and rankings are calculated deterministically via weighted multi-criteria algorithms. The LLM only interprets empirical reality.
-          </p>
+      {/* ── HOW IT WORKS ── */}
+      <section>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.65rem', color: '#0F172A', marginBottom: '0.5rem' }}>How It Works</h2>
+          <p style={{ color: '#64748B', fontSize: '0.95rem' }}>Six clear steps from problem to auditable human decision</p>
         </div>
 
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: '#D1FAE5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <UserCheck size={22} color="#10B981" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Mandatory Human Control</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            The AI recommendation is explicitly advisory. You can accept the AI recommendation, pick a validated alternative, or fully override it with an executive justification.
-          </p>
-        </div>
-
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: '#FEF3C7',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <Sliders size={22} color="#F59E0B" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>What-If Simulation</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Test hypothetical trade-offs by shifting criteria weights in real time. Observe instant rank changes without contaminating the baseline decision record.
-          </p>
-        </div>
-
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: '#F3E8FF',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <Workflow size={22} color="#7C3AED" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>n8n + Groq Automation</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Orchestrated through modular n8n workflow nodes connecting high-speed Groq LPU inference for instant natural language trade-off analysis.
-          </p>
-        </div>
-
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: '#E0F2FE',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <ShieldCheck size={22} color="#0EA5E9" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Analytical Confidence</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Confidence is calculated from mathematical completeness, score separation, and criteria coverage. Clearly communicated as an analytical indicator, never a guarantee.
-          </p>
-        </div>
-
-        <div className="hitl-card">
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
-            background: '#FEE2E2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '1rem',
-          }}>
-            <Database size={22} color="#EF4444" />
-          </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Immutable Audit Trail</h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            Every interaction preserves both what the AI recommended and what the human chose. Overrides require justification notes stored in MongoDB.
-          </p>
+        <div style={{ display: 'flex', gap: '0', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {steps.map((step, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1.25rem 1rem',
+                minWidth: '100px',
+              }}>
+                <div style={{
+                  width: '44px', height: '44px',
+                  borderRadius: '12px',
+                  background: step.color + '18',
+                  border: `1px solid ${step.color}40`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: step.color,
+                }}>
+                  {step.icon}
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', textAlign: 'center', lineHeight: 1.4 }}>
+                  <span style={{ display: 'block', fontSize: '0.65rem', color: '#94A3B8', marginBottom: '0.1rem' }}>Step {idx + 1}</span>
+                  {step.label}
+                </div>
+              </div>
+              {idx < steps.length - 1 && (
+                <ArrowRight size={16} color="#CBD5E1" style={{ flexShrink: 0 }} />
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Demo Scenario Highlight */}
-      <section className="hitl-card" style={{
-        background: 'linear-gradient(135deg, rgba(240, 253, 244, 0.8) 0%, rgba(220, 252, 231, 0.6) 100%)',
-        border: '1px solid var(--primary-light)',
-        padding: '2.5rem',
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem', alignItems: 'center' }}>
-          <div>
-            <span className="badge badge-purple" style={{ marginBottom: '0.75rem' }}>
-              Canonical Hackathon Benchmark
-            </span>
-            <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-              Strategic Supplier Selection
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-              Demonstrates a real-world enterprise procurement trade-off between <strong style={{ color: 'var(--text-primary)' }}>Supplier A</strong> (superior quality & reliability at higher cost) and <strong style={{ color: 'var(--text-primary)' }}>Supplier B</strong> (lower cost & rapid delivery).
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                <CheckCircle2 size={16} color="#10b981" /> Weighted multi-criteria scoring across 5 key dimensions
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                <CheckCircle2 size={16} color="#10b981" /> Groq AI highlights trade-offs and operational risks
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                <CheckCircle2 size={16} color="#10b981" /> Human evaluates and makes the definitive call
-              </div>
-            </div>
-            <button onClick={handleLaunchDemo} className="btn btn-primary">
-              Launch Benchmark Scenario <ArrowRight size={16} />
-            </button>
-          </div>
+      {/* ── FEATURES GRID ── */}
+      <section>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.65rem', color: '#0F172A', marginBottom: '0.5rem' }}>Platform Features</h2>
+          <p style={{ color: '#64748B', fontSize: '0.95rem' }}>Built for responsible AI decision-making</p>
+        </div>
 
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '1.5rem',
-            border: '1px solid var(--border-light)',
-            boxShadow: 'var(--shadow-md)',
-          }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-              Simulated Evaluation Preview
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: '1.25rem' }}>
+          {features.map((f, idx) => (
+            <div key={idx} className="hitl-card hitl-card-interactive" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{
+                width: '42px', height: '42px',
+                borderRadius: '10px',
+                background: f.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: f.iconColor,
+              }}>
+                {f.icon}
+              </div>
+              <h3 style={{ fontSize: '1.05rem', color: '#0F172A' }}>{f.title}</h3>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', lineHeight: 1.6 }}>{f.desc}</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-dark)' }}>Supplier A</span>
-              <span style={{ color: 'var(--primary)', fontWeight: 700 }}>87.5 / 100 (Rank #1)</span>
+          ))}
+        </div>
+      </section>
+
+      {/* ── DEMO SCENARIO CARD ── */}
+      <section>
+        <div className="hitl-card" style={{
+          background: 'linear-gradient(135deg, #F0FDF4 0%, #fff 100%)',
+          border: '1px solid #BBF7D0',
+          padding: '2.5rem',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '2.5rem', alignItems: 'center' }}>
+            <div>
+              <div className="badge badge-purple" style={{ marginBottom: '1rem' }}>Canonical Benchmark Scenario</div>
+              <h2 style={{ fontSize: '1.75rem', color: '#0F172A', marginBottom: '0.85rem' }}>
+                Strategic Supplier Selection
+              </h2>
+              <p style={{ color: '#475569', lineHeight: 1.65, marginBottom: '1.25rem' }}>
+                A real-world enterprise procurement trade-off between
+                <strong style={{ color: '#166534' }}> Supplier A</strong> (superior quality & reliability)
+                and <strong style={{ color: '#166534' }}>Supplier B</strong> (lower cost & rapid delivery)
+                — evaluated across 5 weighted criteria.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                {[
+                  'Weighted scoring across Cost, Quality, Delivery, Reliability, Risk',
+                  'Groq AI explains trade-offs via n8n workflow',
+                  'Human evaluates, accepts, overrides, or picks alternative',
+                  'Full audit trail stored in MongoDB',
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#374151' }}>
+                    <CheckCircle2 size={15} color="#16A34A" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <button onClick={handleLaunchDemo} className="btn btn-primary">
+                Launch Demo Scenario <ArrowRight size={16} />
+              </button>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Supplier B</span>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>84.4 / 100 (Runner-up)</span>
-            </div>
-            <div style={{
-              background: '#E0F2FE',
-              border: '1px solid #7DD3FC',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.75rem',
-              fontSize: '0.825rem',
-              color: '#0C4A6E',
-            }}>
-              <strong>Human Override Test:</strong> Switch weights in What-If Simulator to cost priority → Supplier B takes the lead → Human commits override with justification!
+
+            {/* Mini preview card */}
+            <div className="hitl-card" style={{ border: '1px solid #D1FAE5' }}>
+              <div style={{ fontSize: '0.7rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>
+                Evaluation Preview
+              </div>
+              {[
+                { name: 'Supplier A', score: 87.5, rank: 1 },
+                { name: 'Supplier B', score: 84.4, rank: 2 },
+                { name: 'Supplier C', score: 78.2, rank: 3 },
+              ].map((s) => (
+                <div key={s.name} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.6rem 0.75rem',
+                  borderRadius: '8px',
+                  marginBottom: '0.5rem',
+                  background: s.rank === 1 ? '#F0FDF4' : '#F8FAFC',
+                  border: s.rank === 1 ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{
+                      width: '20px', height: '20px', borderRadius: '50%',
+                      background: s.rank === 1 ? '#16A34A' : '#CBD5E1',
+                      color: '#fff', fontSize: '0.7rem', fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{s.rank}</span>
+                    <span style={{ fontWeight: s.rank === 1 ? 700 : 500, color: s.rank === 1 ? '#166534' : '#475569', fontSize: '0.9rem' }}>
+                      {s.name}
+                    </span>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: s.rank === 1 ? '#16A34A' : '#94A3B8', fontSize: '0.875rem' }}>
+                    {s.score}
+                  </span>
+                </div>
+              ))}
+              <div style={{
+                marginTop: '0.75rem',
+                padding: '0.7rem',
+                borderRadius: '8px',
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                fontSize: '0.78rem',
+                color: '#1E40AF',
+                lineHeight: 1.5,
+              }}>
+                <strong>Try it:</strong> Use the What-If Simulator to increase Cost weight → Supplier B takes the lead → override AI with justification.
+              </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── PHILOSOPHY BANNER ── */}
+      <section style={{
+        background: 'var(--bg-sidebar)',
+        borderRadius: '16px',
+        padding: '2.5rem',
+        textAlign: 'center',
+        color: '#fff',
+      }}>
+        <h2 style={{ fontSize: '1.75rem', color: '#fff', marginBottom: '0.75rem' }}>
+          AI recommends. <span style={{ color: '#86EFAC' }}>Humans decide.</span>
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.75)', maxWidth: '540px', margin: '0 auto 2rem', lineHeight: 1.65, fontSize: '0.95rem' }}>
+          This platform enforces a strict boundary between AI advisory output and human final authority.
+          Every recommendation is explained, challenged, and ultimately owned by a human.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/create" className="btn btn-lg" style={{ background: '#16A34A', color: '#fff', boxShadow: '0 2px 12px rgba(22,163,74,0.4)' }}>
+            Start Now <ArrowRight size={17} />
+          </Link>
+          <Link to="/dashboard" className="btn btn-lg" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
+            View Dashboard
+          </Link>
         </div>
       </section>
     </div>
