@@ -39,6 +39,7 @@ app.get('/api/health', (req, res) => {
 // Mount Routes
 app.use('/api/decisions', require('./routes/decisionRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 
 // 404 Route Handler
 app.use((req, res) => {
