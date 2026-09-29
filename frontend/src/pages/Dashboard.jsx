@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Layers, CheckCircle2, AlertTriangle, Gauge, GitFork,
-  ArrowRight, PlusCircle, Sparkles, RefreshCw, Bot, UserCheck
+  ArrowRight, PlusCircle, RefreshCw, Bot, UserCheck
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -10,7 +10,7 @@ import {
   Title, Tooltip, Legend
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
-import { dashboardAPI, decisionAPI } from '../services/api';
+import { dashboardAPI } from '../services/api';
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -18,7 +18,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -30,14 +29,6 @@ export default function Dashboard() {
     } catch (e) {
       setError('Cannot reach backend. Make sure the server is running on port 5000.');
     } finally { setLoading(false); }
-  };
-
-  const handleSeed = async () => {
-    try {
-      setSeeding(true);
-      await decisionAPI.seedDemo();
-      await load();
-    } catch { /* ignore */ } finally { setSeeding(false); }
   };
 
   if (loading) return (
@@ -118,10 +109,6 @@ export default function Dashboard() {
           <p>Real-time analytics on AI advisory outputs, human override rates and confidence distribution.</p>
         </div>
         <div className="dashboard-actions">
-          <button onClick={handleSeed} disabled={seeding} className="btn btn-secondary">
-            <Sparkles size={15} color="#16A34A" />
-            {seeding ? 'Loading…' : 'Seed Demo'}
-          </button>
           <button onClick={load} className="btn btn-secondary">
             <RefreshCw size={15} /> Refresh
           </button>
