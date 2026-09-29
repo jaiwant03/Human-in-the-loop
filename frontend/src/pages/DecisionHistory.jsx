@@ -1,144 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  History, 
-  Search, 
-  Filter, 
-  ArrowRight, 
-  Bot, 
-  UserCheck, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Calendar,
-  Layers,
-  Sparkles
+import {
+  History, Search, PlusCircle, Bot, UserCheck,
+  AlertTriangle, CheckCircle2, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { decisionAPI } from '../services/api';
 
 export default function DecisionHistory() {
   const [decisions, setDecisions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  useEffect(() => {
-    loadDecisions();
-  }, [categoryFilter, statusFilter]);
+  useEffect(() => { load(); }, [categoryFilter, statusFilter]);
 
-  const loadDecisions = async () => {
+  const load = async () => {
     try {
       setLoading(true);
       const params = {};
       if (categoryFilter !== 'All') params.category = categoryFilter;
       if (statusFilter !== 'All') params.status = statusFilter;
-      if (searchTerm) params.search = searchTerm;
-
+      if (search.trim()) params.search = search.trim();
       const res = await decisionAPI.getDecisions(params);
-      if (res.success) {
-        setDecisions(res.data);
-      }
-    } catch (err) {
-      console.error('Failed to load history:', err);
-    } finally {
-      setLoading(false);
-    }
+      if (res.success) setDecisions(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally { setLoading(false); }
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    loadDecisions();
+  const badge = (d) => {
+    if (!d.humanDecision) return <span className="badge badge-warning">Pending</span>;
+    if (d.humanDecision.type === 'ACCEPT_AI') return <span className="badge badge-success">AI Accepted</span>;
+    if (d.humanDecision.type === 'OVERRIDE_AI') return <span className="badge badge-danger">Override</span>;
+    return <span className="badge badge-purple">Alternative</span>;
   };
 
-  const renderOutcomeBadge = (humanDecision) => {
-    if (!humanDecision) {
-      return <span className="badge badge-warning">Awaiting Review</span>;
-    }
-    if (humanDecision.type === 'ACCEPT_AI') {
-      return <span className="badge badge-success">AI Accepted</span>;
-    }
-    if (humanDecision.type === 'OVERRIDE_AI') {
-      return <span className="badge badge-danger">Human Override</span>;
-    }
-    return <span className="badge badge-purple">Alternative Chosen</span>;
-  };
+  const confColor = (c) => c >= 80 ? '#16A34A' : c >= 60 ? '#D97706' : '#DC2626';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      {/* Header */}
-      <div className="dashboard-header">
-        <div className="dashboard-title-group">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-            <History size={24} color="#a5b4fc" />
-            <h1>Decision Audit Trail</h1>
-          </div>
-          <p>
-            Immutable chronological ledger capturing AI advisory outputs and human executive determinations.
-          </p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
 
-        <Link to="/create" className="btn btn-primary">
-          + New Decision
-        </Link>
+      {/* Header */}
+      <div className="page-header-row">
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
+            <History size={22} color="#16A34A" />
+            <h1 style={{ fontSize: '1.85rem' }}>Decision Audit Trail</h1>
+          </div>
+          <p style={{ fontSize: '0.9rem' }}>Chronological record of all AI recommendations and human final decisions.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button onClick={load} className="btn btn-secondary"><RefreshCw size={14} /></button>
+          <Link to="/create" className="btn btn-primary"><PlusCircle size={15} /> New Decision</Link>
+        </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="hitl-card" style={{ padding: '1.25rem' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Search decisions by title or context keywords..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      {/* Filters */}
+      <div className="hitl-card" style={{ padding: '1.15rem' }}>
+        <form onSubmit={e => { e.preventDefault(); load(); }}
+          style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <label className="form-label">Search</label>
+            <input className="form-input" placeholder="Search by title…" value={search}
+              onChange={e => setSearch(e.target.value)} />
           </div>
-
           <div style={{ minWidth: '180px' }}>
-            <select
-              className="form-select"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
+            <label className="form-label">Category</label>
+            <select className="form-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
               <option value="All">All Categories</option>
-              <option value="Supplier Selection">Supplier Selection</option>
-              <option value="Project Selection">Project Selection</option>
-              <option value="Product Selection">Product Selection</option>
-              <option value="Vendor Selection">Vendor Selection</option>
-              <option value="Investment Selection">Investment Selection</option>
-              <option value="Custom">Custom Domain</option>
+              {['Supplier Selection','Project Selection','Product Selection','Vendor Selection','Investment Selection','Custom'].map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           </div>
-
           <div style={{ minWidth: '160px' }}>
-            <select
-              className="form-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
+            <label className="form-label">Status</label>
+            <select className="form-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="All">All Statuses</option>
               <option value="FINALIZED">Finalized</option>
-              <option value="AWAITING_HUMAN_DECISION">Awaiting Review</option>
+              <option value="AWAITING_HUMAN_DECISION">Pending</option>
             </select>
           </div>
-
-          <button type="submit" className="btn btn-secondary">
-            <Search size={16} /> Filter
+          <button type="submit" className="btn btn-primary" style={{ height: '38px' }}>
+            <Search size={15} /> Search
           </button>
         </form>
       </div>
 
-      {/* Table Container */}
+      {/* Table */}
       <div className="hitl-card">
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <div className="loading-screen" style={{ padding: '3rem' }}>
             <div className="spinner" />
-            <p style={{ marginTop: '0.85rem', color: 'var(--text-secondary)' }}>Loading audit trail...</p>
+            <p>Loading audit trail…</p>
           </div>
         ) : decisions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3.5rem 0', color: 'var(--text-muted)' }}>
-            No decisions match the current query filter.
+          <div className="empty-state">
+            <History size={36} />
+            <h3>No decisions found</h3>
+            <p>Try adjusting the filters or create a new decision.</p>
           </div>
         ) : (
           <div className="decisions-table-container">
@@ -150,49 +111,47 @@ export default function DecisionHistory() {
                   <th>AI Recommendation</th>
                   <th>Confidence</th>
                   <th>Human Decision</th>
-                  <th>Outcome Type</th>
-                  <th>Date Logged</th>
+                  <th>Outcome</th>
+                  <th>Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {decisions.map((d) => (
+                {decisions.map(d => (
                   <tr key={d._id}>
-                    <td className="decision-title-cell" style={{ maxWidth: '280px' }}>
+                    <td className="decision-title-cell">
                       <Link to={`/decisions/${d._id}`}>{d.title}</Link>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {d.description}
-                      </div>
+                      <small>{d.description?.slice(0, 70)}{d.description?.length > 70 ? '…' : ''}</small>
                     </td>
+                    <td><span className="badge badge-gray">{d.category}</span></td>
                     <td>
-                      <span className="badge badge-gray">{d.category}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#cbd5e1', fontWeight: 600 }}>
-                        <Bot size={14} color="#a5b4fc" />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, color: '#166534', fontSize: '0.875rem' }}>
+                        <Bot size={13} color="#16A34A" />
                         {d.aiAnalysis?.recommendation?.option || 'N/A'}
                       </div>
                     </td>
                     <td>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: '#a5b4fc', fontWeight: 700 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.875rem', color: confColor(d.aiAnalysis?.confidence || 0) }}>
                         {d.aiAnalysis?.confidence ? `${d.aiAnalysis.confidence}%` : '—'}
                       </span>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700, color: d.humanDecision ? '#ffffff' : 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, color: d.humanDecision ? '#0F172A' : '#94A3B8', fontSize: '0.875rem' }}>
+                        {d.humanDecision && <UserCheck size={13} color="#16A34A" />}
                         {d.humanDecision?.option || 'Pending'}
                       </div>
                     </td>
-                    <td>
-                      {renderOutcomeBadge(d.humanDecision)}
-                    </td>
-                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {new Date(d.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <td>{badge(d)}</td>
+                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {new Date(d.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
                     <td>
-                      <Link to={`/decisions/${d._id}/details`} className="btn btn-sm btn-secondary" title="View Full Audit Record">
-                        Audit Log
-                      </Link>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <Link to={`/decisions/${d._id}`} className="btn btn-sm btn-secondary">View</Link>
+                        <Link to={`/decisions/${d._id}/details`} className="btn btn-sm btn-secondary" title="Audit Log">
+                          <ExternalLink size={12} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -201,6 +160,13 @@ export default function DecisionHistory() {
           </div>
         )}
       </div>
+
+      {/* Summary footer */}
+      {decisions.length > 0 && (
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+          Showing {decisions.length} decision{decisions.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   );
 }
