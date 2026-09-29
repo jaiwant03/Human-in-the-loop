@@ -42,8 +42,7 @@ export default function DecisionDetails() {
 
   const logActionColor = (action) => {
     if (action.includes('HUMAN')) return '#16A34A';
-    if (action.includes('AI')) return '#3B82F6';
-    if (action.includes('DEMO') || action.includes('SEED')) return '#F59E0B';
+    if (action.includes('AI'))    return '#3B82F6';
     return '#94A3B8';
   };
 
