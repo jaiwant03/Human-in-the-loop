@@ -7,14 +7,9 @@ const {
   getDecisionById,
   finalizeDecision,
   simulateWhatIf,
-  seedDemoSupplierDecision,
 } = require('../controllers/decisionController');
 const { validateDecisionInput, validateFinalizeInput } = require('../middleware/validation');
 
-// Specific routes first
-router.post('/seed-demo', seedDemoSupplierDecision);
-
-// Core CRUD & HITL actions
 router.route('/')
   .get(getDecisions)
   .post(validateDecisionInput, createDecision);
