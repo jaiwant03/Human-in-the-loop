@@ -18,6 +18,26 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
+// Load env from backend/.env directly without dotenv dependency
+function loadEnv() {
+  try {
+    const envPath = path.join(__dirname, '..', 'backend', '.env');
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) continue;
+      const key = trimmed.substring(0, eq).trim();
+      const val = trimmed.substring(eq + 1).trim().replace(/^["']|["']$/g, '');
+      if (!process.env[key]) process.env[key] = val;
+    }
+  } catch (e) {
+    console.warn('Could not read backend/.env:', e.message);
+  }
+}
+loadEnv();
+
 const N8N_BASE = process.env.N8N_URL || 'http://localhost:5678';
 const N8N_API_KEY = process.argv.find(a => a.startsWith('--api-key='))?.split('=')[1]
   || process.env.N8N_API_KEY
