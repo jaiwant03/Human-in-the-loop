@@ -1,0 +1,172 @@
+{
+  "name": "Decision Intelligence Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "decision-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Entry Point",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-webhook-1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Input Validation Node\nconst body = $input.first().json.body || $input.first().json;\n\nif (!body.title || !body.options || !Array.isArray(body.options) || body.options.length < 2) {\n  throw new Error('Invalid input: Decision requires title and at least 2 options.');\n}\n\nif (!body.criteria || !Array.isArray(body.criteria) || body.criteria.length < 2) {\n  throw new Error('Invalid input: Decision requires at least 2 evaluation criteria.');\n}\n\nreturn [{ json: body }];"
+      },
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "id": "node-validation-2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 2. Deterministic Scoring & Normalization Node\n// Crucial rule: LLM never invents numerical scores.\nconst data = $input.first().json;\nconst options = data.options;\nconst criteria = data.criteria;\nconst rawWeights = data.weights || {};\n\n// Calculate sum of weights\nlet totalWeight = 0;\nfor (const crit of criteria) {\n  totalWeight += parseFloat(rawWeights[crit.key] || 0);\n}\n\n// Normalize to decimals summing to 1.0\nconst normalizedWeights = {};\nfor (const crit of criteria) {\n  normalizedWeights[crit.key] = totalWeight > 0 ? (parseFloat(rawWeights[crit.key] || 0) / totalWeight) : (1 / criteria.length);\n}\n\n// Deterministic weighted score computation\nconst scores = options.map(opt => {\n  let total = 0;\n  const breakdown = {};\n  for (const crit of criteria) {\n    const val = parseFloat(opt.criteria[crit.key] || 0);\n    const weight = normalizedWeights[crit.key];\n    const contribution = val * weight;\n    breakdown[crit.key] = Math.round(contribution * 100) / 100;\n    total += contribution;\n  }\n  return {\n    name: opt.name,\n    score: Math.round(total * 10) / 10,\n    breakdown,\n    criteria: opt.criteria\n  };\n});\n\n// Sort descending\nscores.sort((a, b) => b.score - a.score);\nscores.forEach((s, idx) => { s.rank = idx + 1; });\n\nreturn [{\n  json: {\n    ...data,\n    deterministicScores: scores,\n    normalizedWeights,\n    topOption: scores[0],\n    runnerUp: scores[1] || null\n  }\n}];"
+      },
+      "name": "Deterministic Scoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "node-scoring-3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 3. Groq Prompt Constructor Node\nconst item = $input.first().json;\n\nconst systemPrompt = `You are an explainable decision-support AI within the Human-in-the-Loop Decision Intelligence Platform.\nYou are NOT the final decision-maker.\nAnalyze the provided decision data.\nIdentify the highest-scoring option based on the deterministic scores supplied.\nExplain why that option is recommended using only the supplied evidence.\nIdentify important positive factors.\nIdentify negative factors and trade-offs.\nIdentify potential risks.\nProvide one or more reasonable alternatives based on the supplied data.\nDo not invent facts.\nDo not create unsupported numerical values.\nIf data is missing, explicitly state that the evidence is insufficient.\nThe final human decision must remain separate from the AI recommendation.\nReturn ONLY valid structured JSON matching this schema:\n{\n  \"recommendation\": { \"option\": \"...\", \"score\": 87 },\n  \"confidence\": 87,\n  \"summary\": \"...\",\n  \"reasons\": [\"...\"],\n  \"evidence\": [{ \"factor\": \"...\", \"value\": 92, \"impact\": \"positive|negative\", \"explanation\": \"...\" }],\n  \"risks\": [{ \"risk\": \"...\", \"severity\": \"low|medium|high\", \"explanation\": \"...\" }],\n  \"alternatives\": [{ \"option\": \"...\", \"score\": 82, \"reason\": \"...\" }],\n  \"tradeoffs\": [\"...\"]\n}`;\n\nconst userPrompt = `Decision Context:\nTitle: ${item.title}\nDescription: ${item.description}\nCategory: ${item.category}\nOptions & Criteria: ${JSON.stringify(item.options, null, 2)}\nDeterministic Calculated Scores: ${JSON.stringify(item.deterministicScores, null, 2)}`;\n\nreturn [{\n  json: {\n    ...item,\n    groqPayload: {\n      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',\n      messages: [\n        { role: 'system', content: systemPrompt },\n        { role: 'user', content: userPrompt }\n      ],\n      response_format: { type: 'json_object' },\n      temperature: 0.2\n    }\n  }\n}];"
+      },
+      "name": "Prepare Groq Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "node-prompt-4"
+    },
+    {
+      "parameters": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.GROQ_API_KEY || $credentials.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.groqPayload) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "name": "Groq AI HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "id": "node-groq-5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 4. Parse & Grounding Node\nconst groqResponse = $input.first().json;\nconst prevData = $('Deterministic Scoring').first().json;\n\nlet parsedAi = {};\ntry {\n  const content = groqResponse.choices[0].message.content;\n  parsedAi = typeof content === 'string' ? JSON.parse(content) : content;\n} catch (e) {\n  parsedAi = {\n    summary: 'AI analysis generated from deterministic calculations.',\n    reasons: ['Highest weighted performance'],\n    evidence: [],\n    risks: [],\n    alternatives: [],\n    tradeoffs: []\n  };\n}\n\n// Enforce that AI recommendation strictly adheres to deterministic top score\nconst topOption = prevData.topOption;\nparsedAi.recommendation = {\n  option: topOption.name,\n  score: topOption.score\n};\n\n// 5. Analytical Confidence Calculation\n// Formula: Completeness*30% + Separation*30% + Strength*20% + Coverage*20%\nconst completeness = 1.0;\nconst separation = prevData.runnerUp ? Math.min(1.0, Math.max(0.1, (topOption.score - prevData.runnerUp.score) / 15)) : 0.5;\nconst coverage = Math.min(1.0, Math.max(0.4, prevData.criteria.length / 5));\nconst strength = 0.85;\n\nconst rawConf = Math.round((completeness * 30) + (separation * 30) + (strength * 20) + (coverage * 20));\nconst calculatedConfidence = Math.min(96, Math.max(50, rawConf));\n\nparsedAi.confidence = calculatedConfidence;\nparsedAi.confidenceCategory = calculatedConfidence >= 80 ? 'High Confidence' : calculatedConfidence >= 60 ? 'Medium Confidence' : 'Low Confidence';\nparsedAi.source = 'n8n_groq';\n\nreturn [{\n  json: {\n    success: true,\n    data: parsedAi,\n    calculatedScores: prevData.deterministicScores\n  }\n}];"
+      },
+      "name": "Parse & Confidence Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "id": "node-parse-6"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "node-respond-7"
+    }
+  ],
+  "connections": {
+    "Webhook Entry Point": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "Deterministic Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic Scoring": {
+      "main": [
+        [
+          {
+            "node": "Prepare Groq Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Groq Prompt": {
+      "main": [
+        [
+          {
+            "node": "Groq AI HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq AI HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Parse & Confidence Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Confidence Validation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
