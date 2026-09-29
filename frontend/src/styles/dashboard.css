@@ -12,10 +12,12 @@
 .dashboard-title-group h1 {
   font-size: 2rem;
   margin-bottom: 0.35rem;
+  color: var(--text-primary);
 }
 
 .dashboard-title-group p {
   font-size: 1rem;
+  color: var(--text-secondary);
 }
 
 .dashboard-actions {
@@ -53,8 +55,8 @@
 
 .stat-card.stat-success::after { background: var(--success); }
 .stat-card.stat-warning::after { background: var(--warning); }
-.stat-card.stat-purple::after { background: var(--accent-purple); }
-.stat-card.stat-cyan::after { background: var(--accent-cyan); }
+.stat-card.stat-purple::after { background: #7C3AED; }
+.stat-card.stat-cyan::after { background: #14B8A6; }
 
 .stat-header {
   display: flex;
@@ -78,14 +80,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
+  background: var(--primary-very-light);
+  color: var(--primary);
 }
 
 .stat-value {
   font-size: 2.25rem;
   font-weight: 800;
-  color: var(--text-highlight);
+  color: var(--text-primary);
   line-height: 1;
   margin-bottom: 0.4rem;
 }
@@ -160,7 +162,7 @@
 }
 
 .decisions-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card-hover);
 }
 
 .decision-title-cell {
@@ -169,11 +171,11 @@
 }
 
 .decision-title-cell a {
-  color: var(--text-highlight);
+  color: var(--primary-dark);
   text-decoration: none;
 }
 
 .decision-title-cell a:hover {
-  color: #a5b4fc;
+  color: var(--primary);
   text-decoration: underline;
 }

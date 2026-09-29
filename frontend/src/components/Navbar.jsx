@@ -29,7 +29,7 @@ export default function Navbar() {
 
   return (
     <nav style={{
-      background: 'rgba(13, 20, 36, 0.85)',
+      background: 'var(--bg-card)',
       backdropFilter: 'blur(16px)',
       borderBottom: '1px solid var(--border-subtle)',
       position: 'sticky',
@@ -40,6 +40,7 @@ export default function Navbar() {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: '1.5rem',
+      boxShadow: 'var(--shadow-sm)',
     }}>
       {/* Brand logo & Philosophy */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -52,13 +53,13 @@ export default function Navbar() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+            boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
           }}>
             <ShieldCheck size={22} color="#ffffff" />
           </div>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              HITL <span style={{ color: '#a5b4fc', fontWeight: 600 }}>Intelligence</span>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              HITL <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Intelligence</span>
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
               AI Recommends • Humans Decide
@@ -104,7 +105,7 @@ export default function Navbar() {
           title="Instantly open canonical Supplier Selection scenario"
           style={{ marginLeft: '0.5rem' }}
         >
-          <Sparkles size={16} color="#a5b4fc" />
+          <Sparkles size={16} />
           {seeding ? 'Loading Demo...' : 'Supplier Demo'}
         </button>
       </div>
